@@ -2,7 +2,7 @@ import { evaluateCognitiveObjectGovernance, defaultTenantGovernancePolicy } from
 import type { CognitiveObject } from "./types";
 import type { CognitiveObjectRepository, CreateCognitiveObjectRepositoryInput } from "./repository";
 
-export interface CreateCognitiveObjectServiceInput extends CreateCognitiveObjectRepositoryInput {}
+export type CreateCognitiveObjectServiceInput = CreateCognitiveObjectRepositoryInput;
 
 export interface CognitiveObjectWithGovernance {
   object: CognitiveObject;
