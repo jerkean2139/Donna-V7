@@ -2,10 +2,23 @@ import Link from "next/link";
 import { getTenantContext } from "@/lib/auth/tenant";
 import { cognitiveObjectRepository } from "@/lib/repositories";
 import { listTenantCognitiveObjects } from "@/lib/cognitive-object/service";
+import { filterCognitiveObjects } from "@/lib/cognitive-object/search";
+import { cognitiveObjectTypes } from "@/lib/cognitive-object/types";
 
-export default async function CognitiveObjectsPage() {
+interface CognitiveObjectsPageProps {
+  searchParams: Promise<{ q?: string; type?: string }>;
+}
+
+export default async function CognitiveObjectsPage({ searchParams }: CognitiveObjectsPageProps) {
+  const { q, type } = await searchParams;
   const tenant = await getTenantContext();
   const objects = await listTenantCognitiveObjects(cognitiveObjectRepository, tenant.tenantId);
+
+  const selectedType = type && cognitiveObjectTypes.includes(type as never) ? type : "all";
+  const filtered = filterCognitiveObjects(objects, {
+    query: q,
+    objectType: selectedType as never,
+  });
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-10">
@@ -21,13 +34,56 @@ export default async function CognitiveObjectsPage() {
         </Link>
       </div>
 
-      <div className="mt-8 space-y-4">
+      <form className="mt-8 flex flex-wrap items-end gap-3">
+        <label className="flex-1">
+          <span className="text-xs font-medium text-slate-600">Search</span>
+          <input
+            name="q"
+            defaultValue={q ?? ""}
+            placeholder="Search title, summary, objective…"
+            className="mt-1 w-full rounded-lg border border-slate-300 p-2.5 text-sm"
+          />
+        </label>
+        <label>
+          <span className="text-xs font-medium text-slate-600">Type</span>
+          <select
+            name="type"
+            defaultValue={selectedType}
+            className="mt-1 rounded-lg border border-slate-300 p-2.5 text-sm capitalize"
+          >
+            <option value="all">All types</option>
+            {cognitiveObjectTypes.map((objectType) => (
+              <option key={objectType} value={objectType}>
+                {objectType}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button type="submit" className="rounded-lg bg-slate-950 px-4 py-2.5 text-sm text-white">
+          Apply
+        </button>
+        {(q || selectedType !== "all") && (
+          <Link className="px-2 py-2.5 text-sm text-slate-500 hover:text-slate-900" href="/cognitive-objects">
+            Clear
+          </Link>
+        )}
+      </form>
+
+      <p className="mt-4 text-xs text-slate-500">
+        {filtered.length} of {objects.length} object{objects.length === 1 ? "" : "s"}
+      </p>
+
+      <div className="mt-4 space-y-4">
         {objects.length === 0 ? (
           <div className="rounded-xl border border-dashed border-slate-300 p-8 text-slate-700">
             No Cognitive Objects yet. Create the first one to begin building organizational intelligence.
           </div>
+        ) : filtered.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-300 p-8 text-slate-700">
+            No objects match your filter.
+          </div>
         ) : (
-          objects.map((object) => (
+          filtered.map((object) => (
             <Link
               key={object.id}
               href={`/cognitive-objects/${object.id}`}
