@@ -35,6 +35,7 @@ describe("drizzle cognitive object repository mapping", () => {
       createdByUserId: "user_1",
       objectType: "decision",
       title: "Adopt Drizzle persistence",
+      objective: "Decide how to persist cognitive objects.",
       summary: "Wire Postgres behind an env flag.",
       body: null,
       status: "draft",

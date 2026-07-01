@@ -71,6 +71,7 @@ export const cognitiveObjects = pgTable(
     createdByUserId: varchar("created_by_user_id", { length: 191 }).notNull(),
     objectType: cognitiveObjectTypeEnum("object_type").notNull(),
     title: varchar("title", { length: 180 }).notNull(),
+    objective: text("objective"),
     summary: text("summary"),
     body: text("body"),
     status: cognitiveObjectStatusEnum("status").notNull().default("draft"),
