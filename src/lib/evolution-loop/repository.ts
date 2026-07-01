@@ -132,5 +132,3 @@ export class DrizzleEvolutionLoopRunRepository implements EvolutionLoopRunReposi
   }
 }
 
-export const evolutionLoopRunRepository: EvolutionLoopRunRepository =
-  new InMemoryEvolutionLoopRunRepository();

@@ -13,11 +13,13 @@ values — see `.env.example` for the shape.
 |---|---|---|
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Client + server | Safe to expose. From Clerk dashboard → API keys. |
 | `CLERK_SECRET_KEY` | Server only | **Secret.** From Clerk dashboard → API keys. |
-| `DATABASE_URL` | Migrations (and app once Drizzle repos are wired) | Postgres connection string. |
+| `DATABASE_URL` | Migrations + app persistence | Postgres connection string. |
 
-> The app currently uses in-memory repositories, so `DATABASE_URL` is only
-> needed for `npm run db:migrate` today. It becomes a runtime requirement once
-> the Drizzle adapters are wired in.
+> Persistence is selected at runtime by `DATABASE_URL`: when it is set the app
+> uses the Postgres/Drizzle repositories (run `npm run db:migrate` first so the
+> schema exists); when it is unset the app falls back to in-memory repositories
+> (data does not survive a restart). Set it in the host once you have a
+> database provisioned.
 
 ## Railway (primary host)
 

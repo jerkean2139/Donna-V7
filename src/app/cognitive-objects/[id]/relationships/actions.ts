@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { getTenantContext } from "@/lib/auth/tenant";
 import { relationshipTypes } from "@/lib/cognitive-object/types";
-import { cognitiveGraphRepository } from "@/lib/cognitive-graph/repository";
+import { cognitiveGraphRepository } from "@/lib/repositories";
 import { createCognitiveGraphEdge } from "@/lib/cognitive-graph/service";
 
 export async function createRelationshipAction(formData: FormData): Promise<void> {
