@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTenantContext } from "@/lib/auth/tenant";
-import { cognitiveObjectRepository } from "@/lib/cognitive-object/repository";
+import {
+  cognitiveObjectRepository,
+  cognitiveGraphRepository,
+  evolutionLoopRunRepository,
+} from "@/lib/repositories";
 import { getTenantCognitiveObject } from "@/lib/cognitive-object/service";
 import { evaluateCognitiveObjectGovernance, defaultTenantGovernancePolicy } from "@/lib/cognitive-object/governance";
-import { cognitiveGraphRepository } from "@/lib/cognitive-graph/repository";
 import { listCognitiveGraphEdgesForObject } from "@/lib/cognitive-graph/service";
 import { isHighTrustRelationship } from "@/lib/cognitive-graph/policy";
-import { evolutionLoopRunRepository } from "@/lib/evolution-loop/repository";
 import { listEvolutionLoopRunsForObject } from "@/lib/evolution-loop/service";
 import { RELEASE_READY_SCORE } from "@/lib/evolution-loop/types";
 import { startEvolutionLoopAction } from "../actions";
