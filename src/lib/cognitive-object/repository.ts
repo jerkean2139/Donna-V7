@@ -1,0 +1,66 @@
+import type { CognitiveObject } from "./types";
+
+export interface CreateCognitiveObjectRepositoryInput {
+  tenantId: string;
+  createdByUserId: string;
+  objectType: CognitiveObject["objectType"];
+  title: string;
+  summary?: string | null;
+  body?: string | null;
+  source: CognitiveObject["source"];
+  riskLevel: CognitiveObject["riskLevel"];
+  tags: string[];
+  metadata?: Record<string, unknown>;
+}
+
+export interface CognitiveObjectRepository {
+  create(input: CreateCognitiveObjectRepositoryInput): Promise<CognitiveObject>;
+  listByTenant(tenantId: string): Promise<CognitiveObject[]>;
+  findByIdForTenant(id: string, tenantId: string): Promise<CognitiveObject | null>;
+}
+
+const memoryStore = new Map<string, CognitiveObject>();
+
+export class InMemoryCognitiveObjectRepository implements CognitiveObjectRepository {
+  async create(input: CreateCognitiveObjectRepositoryInput): Promise<CognitiveObject> {
+    const now = new Date();
+    const object: CognitiveObject = {
+      id: crypto.randomUUID(),
+      tenantId: input.tenantId,
+      projectId: null,
+      createdByUserId: input.createdByUserId,
+      objectType: input.objectType,
+      title: input.title,
+      summary: input.summary ?? null,
+      body: input.body ?? null,
+      status: "draft",
+      source: input.source,
+      riskLevel: input.riskLevel,
+      confidenceScore: null,
+      tags: input.tags,
+      metadata: input.metadata ?? {},
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    memoryStore.set(object.id, object);
+    return object;
+  }
+
+  async listByTenant(tenantId: string): Promise<CognitiveObject[]> {
+    return Array.from(memoryStore.values()).filter((object) => object.tenantId === tenantId);
+  }
+
+  async findByIdForTenant(id: string, tenantId: string): Promise<CognitiveObject | null> {
+    const object = memoryStore.get(id);
+
+    if (!object || object.tenantId !== tenantId) {
+      return null;
+    }
+
+    return object;
+  }
+}
+
+export const cognitiveObjectRepository: CognitiveObjectRepository =
+  new InMemoryCognitiveObjectRepository();
