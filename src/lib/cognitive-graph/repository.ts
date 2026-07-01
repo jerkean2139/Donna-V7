@@ -20,9 +20,9 @@ export interface CognitiveGraphRepository {
   listIncomingEdges(objectId: string, tenantId: string): Promise<CognitiveGraphEdge[]>;
 }
 
-const edgeStore = new Map<string, CognitiveGraphEdge>();
-
 export class InMemoryCognitiveGraphRepository implements CognitiveGraphRepository {
+  private readonly store = new Map<string, CognitiveGraphEdge>();
+
   async createEdge(input: CreateCognitiveGraphEdgeRepositoryInput): Promise<CognitiveGraphEdge> {
     const edge: CognitiveGraphEdge = {
       id: crypto.randomUUID(),
@@ -40,12 +40,12 @@ export class InMemoryCognitiveGraphRepository implements CognitiveGraphRepositor
       createdAt: new Date(),
     };
 
-    edgeStore.set(edge.id, edge);
+    this.store.set(edge.id, edge);
     return edge;
   }
 
   async listEdgesForObject(objectId: string, tenantId: string): Promise<CognitiveGraphEdge[]> {
-    return Array.from(edgeStore.values()).filter(
+    return Array.from(this.store.values()).filter(
       (edge) =>
         edge.tenantId === tenantId &&
         (edge.fromObjectId === objectId || edge.toObjectId === objectId),
@@ -53,13 +53,13 @@ export class InMemoryCognitiveGraphRepository implements CognitiveGraphRepositor
   }
 
   async listOutgoingEdges(objectId: string, tenantId: string): Promise<CognitiveGraphEdge[]> {
-    return Array.from(edgeStore.values()).filter(
+    return Array.from(this.store.values()).filter(
       (edge) => edge.tenantId === tenantId && edge.fromObjectId === objectId,
     );
   }
 
   async listIncomingEdges(objectId: string, tenantId: string): Promise<CognitiveGraphEdge[]> {
-    return Array.from(edgeStore.values()).filter(
+    return Array.from(this.store.values()).filter(
       (edge) => edge.tenantId === tenantId && edge.toObjectId === objectId,
     );
   }

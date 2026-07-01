@@ -19,9 +19,9 @@ export interface CognitiveObjectRepository {
   findByIdForTenant(id: string, tenantId: string): Promise<CognitiveObject | null>;
 }
 
-const memoryStore = new Map<string, CognitiveObject>();
-
 export class InMemoryCognitiveObjectRepository implements CognitiveObjectRepository {
+  private readonly store = new Map<string, CognitiveObject>();
+
   async create(input: CreateCognitiveObjectRepositoryInput): Promise<CognitiveObject> {
     const now = new Date();
     const object: CognitiveObject = {
@@ -43,16 +43,16 @@ export class InMemoryCognitiveObjectRepository implements CognitiveObjectReposit
       updatedAt: now,
     };
 
-    memoryStore.set(object.id, object);
+    this.store.set(object.id, object);
     return object;
   }
 
   async listByTenant(tenantId: string): Promise<CognitiveObject[]> {
-    return Array.from(memoryStore.values()).filter((object) => object.tenantId === tenantId);
+    return Array.from(this.store.values()).filter((object) => object.tenantId === tenantId);
   }
 
   async findByIdForTenant(id: string, tenantId: string): Promise<CognitiveObject | null> {
-    const object = memoryStore.get(id);
+    const object = this.store.get(id);
 
     if (!object || object.tenantId !== tenantId) {
       return null;
