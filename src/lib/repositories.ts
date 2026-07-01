@@ -14,6 +14,11 @@ import {
   InMemoryEvolutionLoopRunRepository,
   type EvolutionLoopRunRepository,
 } from "./evolution-loop/repository";
+import {
+  DrizzleOutcomeRepository,
+  InMemoryOutcomeRepository,
+  type OutcomeRepository,
+} from "./outcome/repository";
 
 // Central persistence wiring. When DATABASE_URL is set we use the Postgres /
 // Drizzle adapters (shared single client); otherwise everything falls back to
@@ -23,6 +28,7 @@ interface Repositories {
   cognitiveObjectRepository: CognitiveObjectRepository;
   cognitiveGraphRepository: CognitiveGraphRepository;
   evolutionLoopRunRepository: EvolutionLoopRunRepository;
+  outcomeRepository: OutcomeRepository;
 }
 
 function createRepositories(): Repositories {
@@ -34,6 +40,7 @@ function createRepositories(): Repositories {
       cognitiveObjectRepository: new DrizzleCognitiveObjectRepository(db),
       cognitiveGraphRepository: new DrizzleCognitiveGraphRepository(db),
       evolutionLoopRunRepository: new DrizzleEvolutionLoopRunRepository(db),
+      outcomeRepository: new DrizzleOutcomeRepository(db),
     };
   }
 
@@ -41,6 +48,7 @@ function createRepositories(): Repositories {
     cognitiveObjectRepository: new InMemoryCognitiveObjectRepository(),
     cognitiveGraphRepository: new InMemoryCognitiveGraphRepository(),
     evolutionLoopRunRepository: new InMemoryEvolutionLoopRunRepository(),
+    outcomeRepository: new InMemoryOutcomeRepository(),
   };
 }
 
@@ -49,3 +57,4 @@ const repositories = createRepositories();
 export const cognitiveObjectRepository = repositories.cognitiveObjectRepository;
 export const cognitiveGraphRepository = repositories.cognitiveGraphRepository;
 export const evolutionLoopRunRepository = repositories.evolutionLoopRunRepository;
+export const outcomeRepository = repositories.outcomeRepository;
