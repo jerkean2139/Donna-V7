@@ -111,6 +111,9 @@ export const cognitiveObjectLoopRuns = pgTable("cognitive_object_loop_runs", {
   recommendation: text("recommendation"),
   confidenceScore: integer("confidence_score"),
   releaseScore: integer("release_score"),
+  releaseScoreBreakdown: jsonb("release_score_breakdown").$type<unknown[]>().notNull().default([]),
+  approvalRequired: boolean("approval_required").notNull().default(false),
+  approvalReason: text("approval_reason"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
