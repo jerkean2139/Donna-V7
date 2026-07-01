@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getTenantContext } from "@/lib/auth/tenant";
-import { cognitiveObjectRepository } from "@/lib/cognitive-object/repository";
+import { cognitiveObjectRepository } from "@/lib/repositories";
 import { listTenantCognitiveObjects } from "@/lib/cognitive-object/service";
 
 export default async function CognitiveObjectsPage() {

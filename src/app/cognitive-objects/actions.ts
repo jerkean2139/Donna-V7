@@ -5,9 +5,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getTenantContext } from "@/lib/auth/tenant";
 import { parseCreateCognitiveObjectFormData } from "@/lib/cognitive-object/input";
-import { cognitiveObjectRepository } from "@/lib/cognitive-object/repository";
+import { cognitiveObjectRepository, evolutionLoopRunRepository } from "@/lib/repositories";
 import { createCognitiveObject } from "@/lib/cognitive-object/service";
-import { evolutionLoopRunRepository } from "@/lib/evolution-loop/repository";
 import { startEvolutionLoopForObject } from "@/lib/evolution-loop/service";
 
 export async function createCognitiveObjectAction(formData: FormData): Promise<void> {
