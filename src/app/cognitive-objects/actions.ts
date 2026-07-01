@@ -18,6 +18,7 @@ export async function createCognitiveObjectAction(formData: FormData): Promise<v
     createdByUserId: tenant.userId,
     objectType: input.objectType,
     title: input.title,
+    objective: input.objective,
     summary: input.summary,
     body: input.body,
     source: input.source,

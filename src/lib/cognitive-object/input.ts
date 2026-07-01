@@ -4,6 +4,7 @@ import { cognitiveObjectSources, cognitiveObjectTypes, riskLevels } from "./type
 export const createCognitiveObjectFormSchema = z.object({
   objectType: z.enum(cognitiveObjectTypes),
   title: z.string().min(3).max(180),
+  objective: z.string().max(2000).optional(),
   summary: z.string().max(1000).optional(),
   body: z.string().optional(),
   source: z.enum(cognitiveObjectSources).default("manual"),
@@ -27,6 +28,7 @@ export function parseCreateCognitiveObjectFormData(formData: FormData): CreateCo
   return createCognitiveObjectFormSchema.parse({
     objectType: formData.get("objectType"),
     title: formData.get("title"),
+    objective: formData.get("objective") ?? undefined,
     summary: formData.get("summary") ?? undefined,
     body: formData.get("body") ?? undefined,
     source: formData.get("source") ?? "manual",

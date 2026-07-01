@@ -63,4 +63,38 @@ describe("cognitive graph repository", () => {
     expect(edges).toHaveLength(1);
     expect(edges[0]?.relationshipType).toBe("depends_on");
   });
+
+  it("lists all edges for a tenant across objects", async () => {
+    const repository = new InMemoryCognitiveGraphRepository();
+
+    await repository.createEdge({
+      tenantId: "tenant_a",
+      fromObjectId: "object_1",
+      toObjectId: "object_2",
+      relationshipType: "supports",
+      strength: 100,
+      source: "human",
+    });
+    await repository.createEdge({
+      tenantId: "tenant_a",
+      fromObjectId: "object_3",
+      toObjectId: "object_4",
+      relationshipType: "depends_on",
+      strength: 80,
+      source: "human",
+    });
+    await repository.createEdge({
+      tenantId: "tenant_b",
+      fromObjectId: "object_5",
+      toObjectId: "object_6",
+      relationshipType: "supports",
+      strength: 100,
+      source: "human",
+    });
+
+    const tenantAEdges = await repository.listByTenant("tenant_a");
+
+    expect(tenantAEdges).toHaveLength(2);
+    expect(tenantAEdges.every((edge) => edge.tenantId === "tenant_a")).toBe(true);
+  });
 });
