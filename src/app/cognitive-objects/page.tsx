@@ -1,10 +1,16 @@
 import Link from "next/link";
-import { getTenantContext } from "@/lib/auth/tenant";
+import { tryGetTenantContext } from "@/lib/auth/tenant";
+import { SelectOrganizationNotice } from "@/components/select-organization-notice";
 import { cognitiveObjectRepository } from "@/lib/repositories";
 import { listTenantCognitiveObjects } from "@/lib/cognitive-object/service";
 
 export default async function CognitiveObjectsPage() {
-  const tenant = await getTenantContext();
+  const tenant = await tryGetTenantContext();
+
+  if (!tenant) {
+    return <SelectOrganizationNotice />;
+  }
+
   const objects = await listTenantCognitiveObjects(cognitiveObjectRepository, tenant.tenantId);
 
   return (

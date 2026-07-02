@@ -1,4 +1,4 @@
-import { and, desc, eq, or } from "drizzle-orm";
+import { and, count, desc, eq, or } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { cognitiveObjectRelationships } from "../../db/schema";
 import type * as dbSchema from "../../db/schema";
@@ -22,6 +22,7 @@ export interface CognitiveGraphRepository {
   listEdgesForObject(objectId: string, tenantId: string): Promise<CognitiveGraphEdge[]>;
   listOutgoingEdges(objectId: string, tenantId: string): Promise<CognitiveGraphEdge[]>;
   listIncomingEdges(objectId: string, tenantId: string): Promise<CognitiveGraphEdge[]>;
+  countEdgesForTenant(tenantId: string): Promise<number>;
 }
 
 export class InMemoryCognitiveGraphRepository implements CognitiveGraphRepository {
@@ -66,6 +67,10 @@ export class InMemoryCognitiveGraphRepository implements CognitiveGraphRepositor
     return Array.from(this.store.values()).filter(
       (edge) => edge.tenantId === tenantId && edge.toObjectId === objectId,
     );
+  }
+
+  async countEdgesForTenant(tenantId: string): Promise<number> {
+    return Array.from(this.store.values()).filter((edge) => edge.tenantId === tenantId).length;
   }
 }
 
@@ -167,5 +172,14 @@ export class DrizzleCognitiveGraphRepository implements CognitiveGraphRepository
       .orderBy(desc(cognitiveObjectRelationships.createdAt));
 
     return records.map(toCognitiveGraphEdge);
+  }
+
+  async countEdgesForTenant(tenantId: string): Promise<number> {
+    const [record] = await this.db
+      .select({ value: count() })
+      .from(cognitiveObjectRelationships)
+      .where(eq(cognitiveObjectRelationships.tenantId, tenantId));
+
+    return record?.value ?? 0;
   }
 }

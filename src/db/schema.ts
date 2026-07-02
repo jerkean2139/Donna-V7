@@ -1,5 +1,7 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   index,
   integer,
   jsonb,
@@ -7,6 +9,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -83,7 +86,13 @@ export const cognitiveObjects = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    index("cognitive_objects_tenant_id_idx").on(table.tenantId),
+    // Composite index serves both tenant-only filters and the default
+    // "newest first" tenant listing.
+    index("cognitive_objects_tenant_created_idx").on(table.tenantId, table.createdAt),
+    check(
+      "cognitive_objects_confidence_score_range",
+      sql`${table.confidenceScore} IS NULL OR (${table.confidenceScore} >= 0 AND ${table.confidenceScore} <= 100)`,
+    ),
   ],
 );
 
@@ -92,8 +101,12 @@ export const cognitiveObjectRelationships = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     tenantId: varchar("tenant_id", { length: 191 }).notNull(),
-    fromObjectId: uuid("from_object_id").notNull().references(() => cognitiveObjects.id),
-    toObjectId: uuid("to_object_id").notNull().references(() => cognitiveObjects.id),
+    fromObjectId: uuid("from_object_id")
+      .notNull()
+      .references(() => cognitiveObjects.id, { onDelete: "cascade" }),
+    toObjectId: uuid("to_object_id")
+      .notNull()
+      .references(() => cognitiveObjects.id, { onDelete: "cascade" }),
     relationshipType: relationshipTypeEnum("relationship_type").notNull(),
     strength: integer("strength").notNull().default(60),
     source: relationshipSourceEnum("source").notNull(),
@@ -107,6 +120,21 @@ export const cognitiveObjectRelationships = pgTable(
   (table) => [
     index("cognitive_object_relationships_tenant_from_idx").on(table.tenantId, table.fromObjectId),
     index("cognitive_object_relationships_tenant_to_idx").on(table.tenantId, table.toObjectId),
+    // The same pair of objects can only carry one edge of a given type.
+    uniqueIndex("cognitive_object_relationships_unique_edge_idx").on(
+      table.tenantId,
+      table.fromObjectId,
+      table.toObjectId,
+      table.relationshipType,
+    ),
+    check(
+      "cognitive_object_relationships_strength_range",
+      sql`${table.strength} >= 0 AND ${table.strength} <= 100`,
+    ),
+    check(
+      "cognitive_object_relationships_no_self_edge",
+      sql`${table.fromObjectId} <> ${table.toObjectId}`,
+    ),
   ],
 );
 
@@ -115,7 +143,9 @@ export const cognitiveObjectLoopRuns = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     tenantId: varchar("tenant_id", { length: 191 }).notNull(),
-    objectId: uuid("object_id").notNull().references(() => cognitiveObjects.id),
+    objectId: uuid("object_id")
+      .notNull()
+      .references(() => cognitiveObjects.id, { onDelete: "cascade" }),
     loopVersion: varchar("loop_version", { length: 50 }).notNull(),
     intentSummary: text("intent_summary"),
     hiddenGoal: text("hidden_goal"),
@@ -134,6 +164,14 @@ export const cognitiveObjectLoopRuns = pgTable(
   },
   (table) => [
     index("cognitive_object_loop_runs_tenant_object_idx").on(table.tenantId, table.objectId),
+    check(
+      "cognitive_object_loop_runs_confidence_score_range",
+      sql`${table.confidenceScore} IS NULL OR (${table.confidenceScore} >= 0 AND ${table.confidenceScore} <= 100)`,
+    ),
+    check(
+      "cognitive_object_loop_runs_release_score_range",
+      sql`${table.releaseScore} IS NULL OR (${table.releaseScore} >= 0 AND ${table.releaseScore} <= 100)`,
+    ),
   ],
 );
 
@@ -142,7 +180,10 @@ export const cognitiveObjectApprovals = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     tenantId: varchar("tenant_id", { length: 191 }).notNull(),
-    objectId: uuid("object_id").notNull().references(() => cognitiveObjects.id),
+    // Approvals are audit trail: block object deletion while they exist.
+    objectId: uuid("object_id")
+      .notNull()
+      .references(() => cognitiveObjects.id, { onDelete: "restrict" }),
     approvalStatus: varchar("approval_status", { length: 50 }).notNull().default("requested"),
     approvalReason: text("approval_reason"),
     requestedByUserId: varchar("requested_by_user_id", { length: 191 }),
@@ -150,6 +191,7 @@ export const cognitiveObjectApprovals = pgTable(
     approvedAt: timestamp("approved_at", { withTimezone: true }),
     rejectedAt: timestamp("rejected_at", { withTimezone: true }),
     notes: text("notes"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index("cognitive_object_approvals_tenant_object_idx").on(table.tenantId, table.objectId),
@@ -161,7 +203,10 @@ export const cognitiveObjectOutcomes = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     tenantId: varchar("tenant_id", { length: 191 }).notNull(),
-    objectId: uuid("object_id").notNull().references(() => cognitiveObjects.id),
+    // Outcomes are audit trail: block object deletion while they exist.
+    objectId: uuid("object_id")
+      .notNull()
+      .references(() => cognitiveObjects.id, { onDelete: "restrict" }),
     outcomeSummary: text("outcome_summary").notNull(),
     successScore: integer("success_score"),
     lessonLearned: text("lesson_learned"),
@@ -170,5 +215,9 @@ export const cognitiveObjectOutcomes = pgTable(
   },
   (table) => [
     index("cognitive_object_outcomes_tenant_object_idx").on(table.tenantId, table.objectId),
+    check(
+      "cognitive_object_outcomes_success_score_range",
+      sql`${table.successScore} IS NULL OR (${table.successScore} >= 0 AND ${table.successScore} <= 100)`,
+    ),
   ],
 );

@@ -17,9 +17,25 @@ export interface CreateCognitiveObjectRepositoryInput {
   metadata?: Record<string, unknown>;
 }
 
+export interface ListByTenantOptions {
+  limit?: number;
+  offset?: number;
+}
+
+// Every tenant listing is bounded so a large workspace can never pull an
+// unbounded result set through a page render.
+export const DEFAULT_LIST_LIMIT = 100;
+export const MAX_LIST_LIMIT = 200;
+
+export function clampListOptions(options?: ListByTenantOptions): Required<ListByTenantOptions> {
+  const limit = Math.min(Math.max(options?.limit ?? DEFAULT_LIST_LIMIT, 1), MAX_LIST_LIMIT);
+  const offset = Math.max(options?.offset ?? 0, 0);
+  return { limit, offset };
+}
+
 export interface CognitiveObjectRepository {
   create(input: CreateCognitiveObjectRepositoryInput): Promise<CognitiveObject>;
-  listByTenant(tenantId: string): Promise<CognitiveObject[]>;
+  listByTenant(tenantId: string, options?: ListByTenantOptions): Promise<CognitiveObject[]>;
   findByIdForTenant(id: string, tenantId: string): Promise<CognitiveObject | null>;
 }
 
@@ -51,8 +67,12 @@ export class InMemoryCognitiveObjectRepository implements CognitiveObjectReposit
     return object;
   }
 
-  async listByTenant(tenantId: string): Promise<CognitiveObject[]> {
-    return Array.from(this.store.values()).filter((object) => object.tenantId === tenantId);
+  async listByTenant(tenantId: string, options?: ListByTenantOptions): Promise<CognitiveObject[]> {
+    const { limit, offset } = clampListOptions(options);
+    return Array.from(this.store.values())
+      .filter((object) => object.tenantId === tenantId)
+      .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
+      .slice(offset, offset + limit);
   }
 
   async findByIdForTenant(id: string, tenantId: string): Promise<CognitiveObject | null> {
@@ -122,12 +142,15 @@ export class DrizzleCognitiveObjectRepository implements CognitiveObjectReposito
     return toCognitiveObject(record);
   }
 
-  async listByTenant(tenantId: string): Promise<CognitiveObject[]> {
+  async listByTenant(tenantId: string, options?: ListByTenantOptions): Promise<CognitiveObject[]> {
+    const { limit, offset } = clampListOptions(options);
     const records = await this.db
       .select()
       .from(cognitiveObjects)
       .where(eq(cognitiveObjects.tenantId, tenantId))
-      .orderBy(desc(cognitiveObjects.createdAt));
+      .orderBy(desc(cognitiveObjects.createdAt))
+      .limit(limit)
+      .offset(offset);
 
     return records.map(toCognitiveObject);
   }

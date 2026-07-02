@@ -5,6 +5,19 @@ export interface TenantContext {
   userId: string;
 }
 
+// Page-friendly variant: returns null when the user has no active Clerk
+// organization instead of throwing, so pages can render a "pick a workspace"
+// state. Mutating actions should keep using getTenantContext, which throws.
+export async function tryGetTenantContext(): Promise<TenantContext | null> {
+  const { orgId, userId } = await auth();
+
+  if (!userId || !orgId) {
+    return null;
+  }
+
+  return { tenantId: orgId, userId };
+}
+
 export async function getTenantContext(): Promise<TenantContext> {
   const { orgId, userId } = await auth();
 
