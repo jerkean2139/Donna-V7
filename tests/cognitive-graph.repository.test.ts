@@ -121,6 +121,31 @@ describe("cognitive graph repository", () => {
     expect(edges).toHaveLength(0);
   });
 
+  it("counts edges per tenant only", async () => {
+    const repository = new InMemoryCognitiveGraphRepository();
+
+    await repository.createEdge({
+      tenantId: "tenant_a",
+      fromObjectId: "object_1",
+      toObjectId: "object_2",
+      relationshipType: "supports",
+      strength: 80,
+      source: "human",
+    });
+    await repository.createEdge({
+      tenantId: "tenant_b",
+      fromObjectId: "object_3",
+      toObjectId: "object_4",
+      relationshipType: "supports",
+      strength: 80,
+      source: "human",
+    });
+
+    expect(await repository.countEdgesForTenant("tenant_a")).toBe(1);
+    expect(await repository.countEdgesForTenant("tenant_b")).toBe(1);
+    expect(await repository.countEdgesForTenant("tenant_c")).toBe(0);
+  });
+
   it("blocks edges when either object does not exist", async () => {
     const repository = new InMemoryCognitiveGraphRepository();
     const objectRepository = new InMemoryCognitiveObjectRepository();
