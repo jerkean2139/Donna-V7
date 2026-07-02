@@ -1,6 +1,10 @@
 import { evaluateCognitiveObjectGovernance, defaultTenantGovernancePolicy } from "./governance";
 import type { CognitiveObject } from "./types";
-import type { CognitiveObjectRepository, CreateCognitiveObjectRepositoryInput } from "./repository";
+import type {
+  CognitiveObjectRepository,
+  CreateCognitiveObjectRepositoryInput,
+  ListByTenantOptions,
+} from "./repository";
 
 export type CreateCognitiveObjectServiceInput = CreateCognitiveObjectRepositoryInput;
 
@@ -27,8 +31,9 @@ export async function createCognitiveObject(
 export async function listTenantCognitiveObjects(
   repository: CognitiveObjectRepository,
   tenantId: string,
+  options?: ListByTenantOptions,
 ): Promise<CognitiveObject[]> {
-  return repository.listByTenant(tenantId);
+  return repository.listByTenant(tenantId, options);
 }
 
 export async function getTenantCognitiveObject(
