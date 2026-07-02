@@ -6,6 +6,7 @@ import { z } from "zod";
 import { getTenantContext } from "@/lib/auth/tenant";
 import { createCognitiveObjectFormSchema } from "@/lib/cognitive-object/input";
 import { toFieldErrors, type FormActionState } from "@/lib/forms";
+import { errorField, logger } from "@/lib/logger";
 import { cognitiveObjectRepository, evolutionLoopRunRepository } from "@/lib/repositories";
 import { createCognitiveObject } from "@/lib/cognitive-object/service";
 import { startEvolutionLoopForObject } from "@/lib/evolution-loop/service";
@@ -35,6 +36,7 @@ export async function createCognitiveObjectAction(
   }
 
   let objectId: string;
+  const startedAt = Date.now();
 
   try {
     const result = await createCognitiveObject(cognitiveObjectRepository, {
@@ -49,12 +51,27 @@ export async function createCognitiveObjectAction(
       tags: parsed.data.tags,
     });
     objectId = result.object.id;
-  } catch {
+  } catch (error) {
+    logger.error("cognitive_object.create.failed", {
+      tenantId: tenant.tenantId,
+      userId: tenant.userId,
+      error: errorField(error),
+      durationMs: Date.now() - startedAt,
+    });
     return {
       status: "error",
       message: "The Cognitive Object could not be saved. Please try again.",
     };
   }
+
+  logger.info("cognitive_object.created", {
+    tenantId: tenant.tenantId,
+    userId: tenant.userId,
+    objectId,
+    objectType: parsed.data.objectType,
+    riskLevel: parsed.data.riskLevel,
+    durationMs: Date.now() - startedAt,
+  });
 
   revalidatePath("/cognitive-objects");
   redirect(`/cognitive-objects/${objectId}`);
@@ -70,9 +87,19 @@ export async function startEvolutionLoopAction(formData: FormData): Promise<void
     objectId: formData.get("objectId"),
   });
 
-  await startEvolutionLoopForObject(cognitiveObjectRepository, evolutionLoopRunRepository, {
+  const startedAt = Date.now();
+  const run = await startEvolutionLoopForObject(cognitiveObjectRepository, evolutionLoopRunRepository, {
     objectId: input.objectId,
     tenantId: tenant.tenantId,
+  });
+
+  logger.info("evolution_loop.started", {
+    tenantId: tenant.tenantId,
+    userId: tenant.userId,
+    objectId: input.objectId,
+    runId: run.id,
+    approvalRequired: run.approvalRequired,
+    durationMs: Date.now() - startedAt,
   });
 
   revalidatePath(`/cognitive-objects/${input.objectId}`);

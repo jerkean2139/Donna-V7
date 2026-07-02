@@ -7,6 +7,7 @@ import { getTenantContext } from "@/lib/auth/tenant";
 import { relationshipTypes } from "@/lib/cognitive-object/types";
 import { DomainError } from "@/lib/errors";
 import { toFieldErrors, type FormActionState } from "@/lib/forms";
+import { errorField, logger } from "@/lib/logger";
 import { cognitiveGraphRepository, cognitiveObjectRepository } from "@/lib/repositories";
 import { createCognitiveGraphEdge } from "@/lib/cognitive-graph/service";
 
@@ -47,8 +48,10 @@ export async function createRelationshipAction(
     };
   }
 
+  const startedAt = Date.now();
+
   try {
-    await createCognitiveGraphEdge(cognitiveGraphRepository, cognitiveObjectRepository, {
+    const result = await createCognitiveGraphEdge(cognitiveGraphRepository, cognitiveObjectRepository, {
       tenantId: tenant.tenantId,
       fromObjectId: parsed.data.fromObjectId,
       toObjectId: parsed.data.toObjectId,
@@ -58,7 +61,24 @@ export async function createRelationshipAction(
       createdByUserId: tenant.userId,
       evidenceSummary: parsed.data.evidenceSummary?.trim() || null,
     });
+
+    logger.info("cognitive_graph.edge.created", {
+      tenantId: tenant.tenantId,
+      userId: tenant.userId,
+      edgeId: result.edge.id,
+      relationshipType: parsed.data.relationshipType,
+      durationMs: Date.now() - startedAt,
+    });
   } catch (error) {
+    logger.error("cognitive_graph.edge.create_failed", {
+      tenantId: tenant.tenantId,
+      userId: tenant.userId,
+      fromObjectId: parsed.data.fromObjectId,
+      toObjectId: parsed.data.toObjectId,
+      domainError: error instanceof DomainError,
+      error: errorField(error),
+      durationMs: Date.now() - startedAt,
+    });
     return {
       status: "error",
       message:
