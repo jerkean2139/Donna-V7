@@ -1,17 +1,17 @@
 "use client";
 
 import { useActionState } from "react";
-import { cognitiveObjectTypes, riskLevels } from "@/lib/cognitive-object/types";
+import { riskLevels } from "@/lib/cognitive-object/types";
 import { idleFormState } from "@/lib/forms";
-import { createCognitiveObjectAction } from "../actions";
+import { createDecisionAction } from "../actions";
 
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
   return <p className="mt-1 text-sm text-red-600" role="alert">{message}</p>;
 }
 
-export function CreateObjectForm() {
-  const [state, formAction, isPending] = useActionState(createCognitiveObjectAction, idleFormState);
+export function CreateDecisionForm() {
+  const [state, formAction, isPending] = useActionState(createDecisionAction, idleFormState);
   const fieldErrors = state.status === "error" ? state.fieldErrors ?? {} : {};
 
   return (
@@ -23,22 +23,13 @@ export function CreateObjectForm() {
       )}
 
       <label className="block">
-        <span className="text-sm font-medium">Type</span>
-        <select name="objectType" className="mt-2 w-full rounded-lg border border-slate-300 p-3">
-          {cognitiveObjectTypes.map((type) => (
-            <option key={type} value={type}>{type}</option>
-          ))}
-        </select>
-        <FieldError message={fieldErrors.objectType} />
-      </label>
-
-      <label className="block">
         <span className="text-sm font-medium">Title</span>
         <input
           name="title"
           required
           minLength={3}
           maxLength={180}
+          placeholder="Choose MVP deployment architecture"
           className="mt-2 w-full rounded-lg border border-slate-300 p-3"
           aria-invalid={Boolean(fieldErrors.title)}
         />
@@ -47,11 +38,13 @@ export function CreateObjectForm() {
 
       <label className="block">
         <span className="text-sm font-medium">Objective</span>
-        <span className="ml-2 text-xs text-slate-500">What are you trying to accomplish? (decisions)</span>
+        <span className="ml-2 text-xs text-slate-500">What are you trying to accomplish?</span>
         <textarea
           name="objective"
-          rows={2}
+          required
+          rows={3}
           maxLength={2000}
+          placeholder="Decide how to deploy the Manumation Intelligence Layer MVP."
           className="mt-2 w-full rounded-lg border border-slate-300 p-3"
           aria-invalid={Boolean(fieldErrors.objective)}
         />
@@ -71,28 +64,16 @@ export function CreateObjectForm() {
       </label>
 
       <label className="block">
-        <span className="text-sm font-medium">Body</span>
-        <textarea
-          name="body"
-          rows={8}
-          maxLength={20000}
-          className="mt-2 w-full rounded-lg border border-slate-300 p-3"
-          aria-invalid={Boolean(fieldErrors.body)}
-        />
-        <FieldError message={fieldErrors.body} />
-      </label>
-
-      <label className="block">
         <span className="text-sm font-medium">Risk level</span>
         <select name="riskLevel" className="mt-2 w-full rounded-lg border border-slate-300 p-3">
           {riskLevels.map((risk) => (
-            <option key={risk} value={risk}>{risk}</option>
+            <option key={risk} value={risk}>
+              {risk}
+            </option>
           ))}
         </select>
         <FieldError message={fieldErrors.riskLevel} />
       </label>
-
-      <input type="hidden" name="source" value="manual" />
 
       <label className="block">
         <span className="text-sm font-medium">Tags, comma separated</span>
@@ -110,7 +91,7 @@ export function CreateObjectForm() {
         disabled={isPending}
         className="rounded-lg bg-slate-950 px-5 py-3 text-white disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {isPending ? "Creating…" : "Create object"}
+        {isPending ? "Creating…" : "Create decision"}
       </button>
     </form>
   );

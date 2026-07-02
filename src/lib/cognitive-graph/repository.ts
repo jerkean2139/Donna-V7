@@ -23,6 +23,7 @@ export interface CognitiveGraphRepository {
   listOutgoingEdges(objectId: string, tenantId: string): Promise<CognitiveGraphEdge[]>;
   listIncomingEdges(objectId: string, tenantId: string): Promise<CognitiveGraphEdge[]>;
   countEdgesForTenant(tenantId: string): Promise<number>;
+  listByTenant(tenantId: string): Promise<CognitiveGraphEdge[]>;
 }
 
 export class InMemoryCognitiveGraphRepository implements CognitiveGraphRepository {
@@ -71,6 +72,12 @@ export class InMemoryCognitiveGraphRepository implements CognitiveGraphRepositor
 
   async countEdgesForTenant(tenantId: string): Promise<number> {
     return Array.from(this.store.values()).filter((edge) => edge.tenantId === tenantId).length;
+  }
+
+  async listByTenant(tenantId: string): Promise<CognitiveGraphEdge[]> {
+    return Array.from(this.store.values())
+      .filter((edge) => edge.tenantId === tenantId)
+      .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime());
   }
 }
 
@@ -181,5 +188,15 @@ export class DrizzleCognitiveGraphRepository implements CognitiveGraphRepository
       .where(eq(cognitiveObjectRelationships.tenantId, tenantId));
 
     return record?.value ?? 0;
+  }
+
+  async listByTenant(tenantId: string): Promise<CognitiveGraphEdge[]> {
+    const records = await this.db
+      .select()
+      .from(cognitiveObjectRelationships)
+      .where(eq(cognitiveObjectRelationships.tenantId, tenantId))
+      .orderBy(desc(cognitiveObjectRelationships.createdAt));
+
+    return records.map(toCognitiveGraphEdge);
   }
 }

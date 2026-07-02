@@ -21,6 +21,9 @@ export default function HomePage() {
         <Link className="rounded-lg border border-slate-300 px-5 py-3" href="/cognitive-objects">
           View objects
         </Link>
+        <Link className="rounded-lg border border-slate-300 px-5 py-3" href="/decisions">
+          View decisions
+        </Link>
       </div>
     </main>
   );

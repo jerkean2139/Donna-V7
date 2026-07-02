@@ -8,6 +8,7 @@ export const MAX_TAG_LENGTH = 64;
 export const createCognitiveObjectFormSchema = z.object({
   objectType: z.enum(cognitiveObjectTypes),
   title: z.string().trim().min(3, "Title needs at least 3 characters.").max(180),
+  objective: z.string().max(2000).optional(),
   summary: z.string().max(1000).optional(),
   body: z.string().max(MAX_BODY_LENGTH, `Body must stay under ${MAX_BODY_LENGTH} characters.`).optional(),
   source: z.enum(cognitiveObjectSources).default("manual"),
