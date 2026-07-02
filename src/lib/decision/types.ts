@@ -1,4 +1,8 @@
-import type { CognitiveObjectStatus, RiskLevel } from "../cognitive-object/types";
+import type {
+  CognitiveObjectOutcome,
+  CognitiveObjectStatus,
+  RiskLevel,
+} from "../cognitive-object/types";
 import type {
   LoopAssumption,
   LoopCritique,
@@ -32,6 +36,9 @@ export interface DecisionObjectView {
   recommendation: string | null;
   approvalRequired: boolean;
   approvalReason: string | null;
+
+  // Recorded outcomes / lessons after execution (newest first).
+  outcomes: CognitiveObjectOutcome[];
 
   // Loop provenance.
   loopRunCount: number;

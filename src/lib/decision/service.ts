@@ -1,7 +1,8 @@
-import type { CognitiveObject } from "../cognitive-object/types";
+import type { CognitiveObject, CognitiveObjectOutcome } from "../cognitive-object/types";
 import type { CognitiveObjectRepository } from "../cognitive-object/repository";
 import type { EvolutionLoopRun } from "../evolution-loop/types";
 import type { EvolutionLoopRunRepository } from "../evolution-loop/repository";
+import type { CreateOutcomeRepositoryInput, OutcomeRepository } from "../outcome/repository";
 import type { DecisionObjectView } from "./types";
 
 export const DECISION_OBJECT_TYPE = "decision" as const;
@@ -16,6 +17,7 @@ export function isDecisionObject(object: CognitiveObject): boolean {
 export function assembleDecisionObject(
   object: CognitiveObject,
   loopRuns: EvolutionLoopRun[],
+  outcomes: CognitiveObjectOutcome[] = [],
 ): DecisionObjectView {
   const latest = loopRuns[0] ?? null;
 
@@ -40,6 +42,8 @@ export function assembleDecisionObject(
     approvalRequired: latest?.approvalRequired ?? false,
     approvalReason: latest?.approvalReason ?? null,
 
+    outcomes,
+
     loopRunCount: loopRuns.length,
     latestLoopRunAt: latest?.createdAt ?? null,
 
@@ -55,6 +59,7 @@ export async function getDecisionObjectForTenant(
   loopRepository: EvolutionLoopRunRepository,
   id: string,
   tenantId: string,
+  outcomeRepository?: OutcomeRepository,
 ): Promise<DecisionObjectView | null> {
   const object = await objectRepository.findByIdForTenant(id, tenantId);
 
@@ -62,8 +67,28 @@ export async function getDecisionObjectForTenant(
     return null;
   }
 
-  const loopRuns = await loopRepository.listByObjectForTenant(id, tenantId);
-  return assembleDecisionObject(object, loopRuns);
+  const [loopRuns, outcomes] = await Promise.all([
+    loopRepository.listByObjectForTenant(id, tenantId),
+    outcomeRepository ? outcomeRepository.listByObjectForTenant(id, tenantId) : Promise.resolve([]),
+  ]);
+
+  return assembleDecisionObject(object, loopRuns, outcomes);
+}
+
+// Record an outcome / lesson for a decision after execution. Verifies the
+// object exists for the tenant and is a decision before writing.
+export async function recordDecisionOutcome(
+  objectRepository: CognitiveObjectRepository,
+  outcomeRepository: OutcomeRepository,
+  input: CreateOutcomeRepositoryInput,
+): Promise<CognitiveObjectOutcome> {
+  const object = await objectRepository.findByIdForTenant(input.objectId, input.tenantId);
+
+  if (!object || !isDecisionObject(object)) {
+    throw new Error("Decision not found for tenant.");
+  }
+
+  return outcomeRepository.create(input);
 }
 
 // List all Decision Objects for a tenant (cognitive objects of type decision).

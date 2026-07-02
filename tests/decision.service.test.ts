@@ -2,9 +2,11 @@ import {
   assembleDecisionObject,
   getDecisionObjectForTenant,
   listTenantDecisionObjects,
+  recordDecisionOutcome,
 } from "../src/lib/decision/service";
 import { InMemoryCognitiveObjectRepository } from "../src/lib/cognitive-object/repository";
 import { InMemoryEvolutionLoopRunRepository } from "../src/lib/evolution-loop/repository";
+import { InMemoryOutcomeRepository } from "../src/lib/outcome/repository";
 import type { CognitiveObject } from "../src/lib/cognitive-object/types";
 import type { EvolutionLoopRun } from "../src/lib/evolution-loop/types";
 
@@ -139,6 +141,59 @@ describe("getDecisionObjectForTenant", () => {
     });
 
     expect(await getDecisionObjectForTenant(objects, runs, created.id, "tenant_b")).toBeNull();
+  });
+});
+
+describe("recordDecisionOutcome", () => {
+  it("records an outcome for a decision and surfaces it in the view", async () => {
+    const objects = new InMemoryCognitiveObjectRepository();
+    const runs = new InMemoryEvolutionLoopRunRepository();
+    const outcomes = new InMemoryOutcomeRepository();
+    const created = await objects.create({
+      tenantId: "tenant_a",
+      createdByUserId: "user_1",
+      objectType: "decision",
+      title: "Pick a host",
+      objective: "Choose where to deploy.",
+      source: "manual",
+      riskLevel: "medium",
+      tags: [],
+    });
+
+    await recordDecisionOutcome(objects, outcomes, {
+      tenantId: "tenant_a",
+      objectId: created.id,
+      outcomeSummary: "Deployed to Railway; stable.",
+      successScore: 90,
+      lessonLearned: "Set env vars before first deploy.",
+    });
+
+    const view = await getDecisionObjectForTenant(objects, runs, created.id, "tenant_a", outcomes);
+
+    expect(view?.outcomes).toHaveLength(1);
+    expect(view?.outcomes[0]?.successScore).toBe(90);
+  });
+
+  it("refuses to record an outcome on a non-decision object", async () => {
+    const objects = new InMemoryCognitiveObjectRepository();
+    const outcomes = new InMemoryOutcomeRepository();
+    const created = await objects.create({
+      tenantId: "tenant_a",
+      createdByUserId: "user_1",
+      objectType: "memory",
+      title: "Not a decision",
+      source: "manual",
+      riskLevel: "low",
+      tags: [],
+    });
+
+    await expect(
+      recordDecisionOutcome(objects, outcomes, {
+        tenantId: "tenant_a",
+        objectId: created.id,
+        outcomeSummary: "Should not persist.",
+      }),
+    ).rejects.toThrow("Decision not found for tenant.");
   });
 });
 

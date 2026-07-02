@@ -1,8 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTenantContext } from "@/lib/auth/tenant";
-import { cognitiveObjectRepository, evolutionLoopRunRepository } from "@/lib/repositories";
+import {
+  cognitiveObjectRepository,
+  evolutionLoopRunRepository,
+  outcomeRepository,
+} from "@/lib/repositories";
 import { getDecisionObjectForTenant } from "@/lib/decision/service";
+import { recordDecisionOutcomeAction } from "./actions";
 
 interface DecisionDetailPageProps {
   params: Promise<{ id: string }>;
@@ -25,6 +30,7 @@ export default async function DecisionDetailPage({ params }: DecisionDetailPageP
     evolutionLoopRunRepository,
     id,
     tenant.tenantId,
+    outcomeRepository,
   );
 
   if (!decision) {
@@ -114,6 +120,78 @@ export default async function DecisionDetailPage({ params }: DecisionDetailPageP
             ))}
           </ul>
         )}
+      </section>
+
+      <section className="mt-8">
+        <h2 className="font-semibold text-slate-950">
+          Outcomes &amp; lessons{" "}
+          <span className="text-sm font-normal text-slate-500">({decision.outcomes.length})</span>
+        </h2>
+        {decision.outcomes.length === 0 ? (
+          <p className="mt-2 text-sm text-slate-500">No outcomes recorded yet.</p>
+        ) : (
+          <ul className="mt-3 space-y-2">
+            {decision.outcomes.map((outcome) => (
+              <li key={outcome.id} className="rounded-lg border border-slate-200 p-3 text-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-slate-900">{outcome.outcomeSummary}</span>
+                  {outcome.successScore != null && (
+                    <span className="shrink-0 text-xs text-slate-500">
+                      success {outcome.successScore}/100
+                    </span>
+                  )}
+                </div>
+                {outcome.lessonLearned && (
+                  <p className="mt-1 text-slate-600">Lesson: {outcome.lessonLearned}</p>
+                )}
+                {outcome.followUpRequired && (
+                  <p className="mt-1 text-xs font-medium text-amber-700">Follow-up required</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <form action={recordDecisionOutcomeAction} className="mt-4 space-y-3 rounded-lg border border-slate-200 p-4">
+          <input type="hidden" name="objectId" value={decision.id} />
+          <h3 className="text-sm font-semibold text-slate-700">Record an outcome</h3>
+          <label className="block">
+            <span className="text-xs font-medium text-slate-600">What happened?</span>
+            <textarea
+              name="outcomeSummary"
+              required
+              rows={2}
+              className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm"
+            />
+          </label>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="text-xs font-medium text-slate-600">Success score (0-100)</span>
+              <input
+                name="successScore"
+                type="number"
+                min={0}
+                max={100}
+                className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm"
+              />
+            </label>
+            <label className="flex items-center gap-2 sm:mt-6">
+              <input name="followUpRequired" type="checkbox" />
+              <span className="text-xs font-medium text-slate-600">Follow-up required</span>
+            </label>
+          </div>
+          <label className="block">
+            <span className="text-xs font-medium text-slate-600">Lesson learned</span>
+            <textarea
+              name="lessonLearned"
+              rows={2}
+              className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm"
+            />
+          </label>
+          <button type="submit" className="rounded-lg bg-slate-950 px-4 py-2 text-sm text-white">
+            Save outcome
+          </button>
+        </form>
       </section>
 
       <p className="mt-10 text-xs text-slate-400">
