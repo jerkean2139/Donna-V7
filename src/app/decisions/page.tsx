@@ -17,16 +17,19 @@ export default async function DecisionsPage() {
             and learned from.
           </p>
         </div>
-        <Link className="rounded-lg bg-slate-950 px-5 py-3 text-white" href="/cognitive-objects/new">
-          New object
+        <Link className="rounded-lg bg-slate-950 px-5 py-3 text-white" href="/decisions/new">
+          New decision
         </Link>
       </div>
 
       <div className="mt-8 space-y-4">
         {decisions.length === 0 ? (
           <div className="rounded-xl border border-dashed border-slate-300 p-8 text-slate-700">
-            No Decision Objects yet. Create a Cognitive Object with type{" "}
-            <span className="font-semibold">decision</span> to start one.
+            No Decision Objects yet.{" "}
+            <Link className="font-semibold underline" href="/decisions/new">
+              Create your first decision
+            </Link>
+            .
           </div>
         ) : (
           decisions.map((decision) => (
