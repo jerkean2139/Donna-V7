@@ -8,6 +8,7 @@ import type {
   CreateCognitiveGraphEdgeRepositoryInput,
 } from "./repository";
 import type { CognitiveObjectRepository } from "../cognitive-object/repository";
+import { DomainError } from "../errors";
 
 export interface CognitiveGraphEdgeWithPolicy {
   edge: CognitiveGraphEdge;
@@ -21,7 +22,7 @@ export async function createCognitiveGraphEdge(
   input: CreateCognitiveGraphEdgeRepositoryInput,
 ): Promise<CognitiveGraphEdgeWithPolicy> {
   if (input.fromObjectId === input.toObjectId) {
-    throw new Error("A Cognitive Object cannot be related to itself.");
+    throw new DomainError("A Cognitive Object cannot be related to itself.");
   }
 
   // Tenant isolation: both endpoints must exist inside the caller's tenant.
@@ -33,7 +34,7 @@ export async function createCognitiveGraphEdge(
   ]);
 
   if (!fromObject || !toObject) {
-    throw new Error("Both Cognitive Objects must exist in the active tenant.");
+    throw new DomainError("Both Cognitive Objects must exist in the active tenant.");
   }
 
   const edge = await repository.createEdge(input);
