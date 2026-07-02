@@ -11,11 +11,11 @@ Gate at audit end: typecheck ✅ · lint ✅ · tests 25/25 ✅ · production bu
 | 1 | Security | 4/10 | 8/10 | 9 | CSP + rate limiting deferred (decisions below) |
 | 2 | Auth & Multi-tenancy | 6/10 | 9/10 | 10 | RLS defense-in-depth pending (decision below) |
 | 3 | Database & Data integrity | 5/10 | 9/10 | 9 | ✅ |
-| 4 | Code quality & Architecture | 7/10 | 8/10 | 9 | Layer-boundary lint rule still to add |
+| 4 | Code quality & Architecture | 7/10 | 9/10 | 9 | ✅ Layer-boundary lint rule added (round 2) |
 | 5 | API & Server Action design | 4/10 | 9/10 | 9 | ✅ |
-| 6 | UI/UX & Accessibility | 2/10 | 8/10 | 9 | Design tokens / dark mode / responsive pass remain |
+| 6 | UI/UX & Accessibility | 2/10 | 9/10 | 9 | ✅ Pagination, skip link, focus indicator, aria-current (round 2); design tokens/dark mode optional |
 | 7 | Performance | 6/10 | 8/10 | 9 | EXPLAIN + bundle analysis not yet done against real data |
-| 8 | Testing | 5/10 | 8/10 | 9 | Action-level tests with a Clerk mock would close the gap |
+| 8 | Testing | 5/10 | 9/10 | 9 | ✅ Action-level tests with Clerk mock added (round 2, 37 tests total) |
 | 9 | Observability & Operations | 4/10 | 8/10 | 8 | ✅ |
 | 10 | DX, CI/CD & Dependencies | 5/10 | 8/10 | 9 | Pre-commit hooks + README walkthrough remain |
 
@@ -58,12 +58,14 @@ Gate at audit end: typecheck ✅ · lint ✅ · tests 25/25 ✅ · production bu
 
 ## Remaining known debt (Medium/Low)
 
-- ESLint `no-restricted-imports` rule to mechanically enforce app → service → repository → db layering.
-- Action-level tests (happy path + auth failure + validation failure) using a Clerk mock.
-- Pagination UI on the objects list (repo layer supports limit/offset; the page shows the newest 100).
-- Design tokens, dark mode, and a real responsive/a11y pass (360/768/1280).
+Round 2 (post-merge follow-up) closed: layering lint rule, action-level tests
+(happy/auth-failure/validation-failure/cross-tenant), pagination UI, skip link,
+global focus-visible indicator, aria-current nav. Still open:
+
+- Design tokens and dark mode; a device-level responsive verification (360/768/1280).
 - README end-to-end walkthrough verification; pre-commit hooks (lint-staged) if desired.
 - EXPLAIN analysis and bundle-size check once real data volume exists.
+- Relationship target picker lists at most the newest 100 objects; add search once workspaces grow.
 
 ## DECISIONS_NEEDED (human call)
 

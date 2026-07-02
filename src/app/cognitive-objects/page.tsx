@@ -4,14 +4,35 @@ import { SelectOrganizationNotice } from "@/components/select-organization-notic
 import { cognitiveObjectRepository } from "@/lib/repositories";
 import { listTenantCognitiveObjects } from "@/lib/cognitive-object/service";
 
-export default async function CognitiveObjectsPage() {
+const PAGE_SIZE = 50;
+
+interface CognitiveObjectsPageProps {
+  searchParams: Promise<{ page?: string }>;
+}
+
+function parsePage(raw: string | undefined): number {
+  const page = Number.parseInt(raw ?? "1", 10);
+  return Number.isFinite(page) && page >= 1 ? page : 1;
+}
+
+export default async function CognitiveObjectsPage({ searchParams }: CognitiveObjectsPageProps) {
   const tenant = await tryGetTenantContext();
 
   if (!tenant) {
     return <SelectOrganizationNotice />;
   }
 
-  const objects = await listTenantCognitiveObjects(cognitiveObjectRepository, tenant.tenantId);
+  const { page } = await searchParams;
+  const currentPage = parsePage(page);
+
+  // Fetch one extra row beyond the page to know whether a next page exists
+  // without a separate count query.
+  const rows = await listTenantCognitiveObjects(cognitiveObjectRepository, tenant.tenantId, {
+    limit: PAGE_SIZE + 1,
+    offset: (currentPage - 1) * PAGE_SIZE,
+  });
+  const objects = rows.slice(0, PAGE_SIZE);
+  const hasNextPage = rows.length > PAGE_SIZE;
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-10">
@@ -30,7 +51,9 @@ export default async function CognitiveObjectsPage() {
       <div className="mt-8 space-y-4">
         {objects.length === 0 ? (
           <div className="rounded-xl border border-dashed border-slate-300 p-8 text-slate-700">
-            No Cognitive Objects yet. Create the first one to begin building organizational intelligence.
+            {currentPage === 1
+              ? "No Cognitive Objects yet. Create the first one to begin building organizational intelligence."
+              : "No Cognitive Objects on this page."}
           </div>
         ) : (
           objects.map((object) => (
@@ -50,6 +73,34 @@ export default async function CognitiveObjectsPage() {
           ))
         )}
       </div>
+
+      {(currentPage > 1 || hasNextPage) && (
+        <nav aria-label="Pagination" className="mt-8 flex items-center justify-between gap-4">
+          {currentPage > 1 ? (
+            <Link
+              className="rounded-lg border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50"
+              href={`/cognitive-objects?page=${currentPage - 1}`}
+              rel="prev"
+            >
+              ← Newer
+            </Link>
+          ) : (
+            <span aria-hidden="true" />
+          )}
+          <span className="text-sm text-slate-600">Page {currentPage}</span>
+          {hasNextPage ? (
+            <Link
+              className="rounded-lg border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50"
+              href={`/cognitive-objects?page=${currentPage + 1}`}
+              rel="next"
+            >
+              Older →
+            </Link>
+          ) : (
+            <span aria-hidden="true" />
+          )}
+        </nav>
+      )}
     </main>
   );
 }

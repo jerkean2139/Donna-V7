@@ -7,6 +7,7 @@ import {
   SignInButton,
   UserButton,
 } from "@clerk/nextjs";
+import { MainNav } from "@/components/main-nav";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -19,6 +20,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en">
       <body>
         <ClerkProvider>
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-slate-950 focus:px-4 focus:py-2 focus:text-white"
+          >
+            Skip to content
+          </a>
           <header className="border-b border-slate-200">
             <nav
               aria-label="Main navigation"
@@ -29,12 +36,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                   Donna V7
                 </Link>
                 <Show when="signed-in">
-                  <Link href="/dashboard" className="text-sm text-slate-700 hover:text-slate-950">
-                    Dashboard
-                  </Link>
-                  <Link href="/cognitive-objects" className="text-sm text-slate-700 hover:text-slate-950">
-                    Cognitive Objects
-                  </Link>
+                  <MainNav />
                 </Show>
               </div>
               <div className="flex items-center gap-4">
@@ -54,7 +56,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               </div>
             </nav>
           </header>
-          {children}
+          <div id="main-content">{children}</div>
         </ClerkProvider>
       </body>
     </html>
