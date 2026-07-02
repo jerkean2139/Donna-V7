@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getTenantContext } from "@/lib/auth/tenant";
+import { tryGetTenantContext } from "@/lib/auth/tenant";
+import { SelectOrganizationNotice } from "@/components/select-organization-notice";
 import {
   cognitiveObjectRepository,
   evolutionLoopRunRepository,
   outcomeRepository,
 } from "@/lib/repositories";
 import { getDecisionObjectForTenant } from "@/lib/decision/service";
-import { recordDecisionOutcomeAction } from "./actions";
+import { OutcomeForm } from "./outcome-form";
 
 interface DecisionDetailPageProps {
   params: Promise<{ id: string }>;
@@ -24,7 +25,12 @@ function Field({ label, value }: { label: string; value: string | null }) {
 
 export default async function DecisionDetailPage({ params }: DecisionDetailPageProps) {
   const { id } = await params;
-  const tenant = await getTenantContext();
+  const tenant = await tryGetTenantContext();
+
+  if (!tenant) {
+    return <SelectOrganizationNotice />;
+  }
+
   const decision = await getDecisionObjectForTenant(
     cognitiveObjectRepository,
     evolutionLoopRunRepository,
@@ -152,46 +158,7 @@ export default async function DecisionDetailPage({ params }: DecisionDetailPageP
           </ul>
         )}
 
-        <form action={recordDecisionOutcomeAction} className="mt-4 space-y-3 rounded-lg border border-slate-200 p-4">
-          <input type="hidden" name="objectId" value={decision.id} />
-          <h3 className="text-sm font-semibold text-slate-700">Record an outcome</h3>
-          <label className="block">
-            <span className="text-xs font-medium text-slate-600">What happened?</span>
-            <textarea
-              name="outcomeSummary"
-              required
-              rows={2}
-              className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm"
-            />
-          </label>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block">
-              <span className="text-xs font-medium text-slate-600">Success score (0-100)</span>
-              <input
-                name="successScore"
-                type="number"
-                min={0}
-                max={100}
-                className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm"
-              />
-            </label>
-            <label className="flex items-center gap-2 sm:mt-6">
-              <input name="followUpRequired" type="checkbox" />
-              <span className="text-xs font-medium text-slate-600">Follow-up required</span>
-            </label>
-          </div>
-          <label className="block">
-            <span className="text-xs font-medium text-slate-600">Lesson learned</span>
-            <textarea
-              name="lessonLearned"
-              rows={2}
-              className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm"
-            />
-          </label>
-          <button type="submit" className="rounded-lg bg-slate-950 px-4 py-2 text-sm text-white">
-            Save outcome
-          </button>
-        </form>
+        <OutcomeForm decisionId={decision.id} />
       </section>
 
       <p className="mt-10 text-xs text-slate-400">

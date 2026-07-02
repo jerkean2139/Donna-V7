@@ -22,13 +22,3 @@ export const createDecisionFormSchema = z.object({
 });
 
 export type CreateDecisionFormInput = z.infer<typeof createDecisionFormSchema>;
-
-export function parseCreateDecisionFormData(formData: FormData): CreateDecisionFormInput {
-  return createDecisionFormSchema.parse({
-    title: formData.get("title"),
-    objective: formData.get("objective"),
-    summary: formData.get("summary") ?? undefined,
-    riskLevel: formData.get("riskLevel") ?? "low",
-    tags: formData.get("tags") ?? undefined,
-  });
-}

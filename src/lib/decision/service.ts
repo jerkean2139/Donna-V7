@@ -3,6 +3,7 @@ import type { CognitiveObjectRepository } from "../cognitive-object/repository";
 import type { EvolutionLoopRun } from "../evolution-loop/types";
 import type { EvolutionLoopRunRepository } from "../evolution-loop/repository";
 import type { CreateOutcomeRepositoryInput, OutcomeRepository } from "../outcome/repository";
+import { DomainError } from "../errors";
 import type { DecisionObjectView } from "./types";
 
 export const DECISION_OBJECT_TYPE = "decision" as const;
@@ -85,7 +86,7 @@ export async function recordDecisionOutcome(
   const object = await objectRepository.findByIdForTenant(input.objectId, input.tenantId);
 
   if (!object || !isDecisionObject(object)) {
-    throw new Error("Decision not found for tenant.");
+    throw new DomainError("Decision not found for tenant.");
   }
 
   return outcomeRepository.create(input);
