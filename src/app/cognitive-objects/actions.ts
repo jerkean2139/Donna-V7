@@ -20,6 +20,7 @@ export async function createCognitiveObjectAction(
   const parsed = createCognitiveObjectFormSchema.safeParse({
     objectType: formData.get("objectType"),
     title: formData.get("title"),
+    objective: formData.get("objective") || undefined,
     summary: formData.get("summary") || undefined,
     body: formData.get("body") || undefined,
     source: formData.get("source") ?? "manual",
@@ -44,6 +45,7 @@ export async function createCognitiveObjectAction(
       createdByUserId: tenant.userId,
       objectType: parsed.data.objectType,
       title: parsed.data.title,
+      objective: parsed.data.objective,
       summary: parsed.data.summary,
       body: parsed.data.body,
       source: parsed.data.source,

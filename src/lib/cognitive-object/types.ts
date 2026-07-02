@@ -58,6 +58,7 @@ export interface CognitiveObject {
   createdByUserId: string;
   objectType: CognitiveObjectType;
   title: string;
+  objective?: string | null;
   summary?: string | null;
   body?: string | null;
   status: CognitiveObjectStatus;

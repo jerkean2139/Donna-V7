@@ -9,6 +9,7 @@ export interface CreateCognitiveObjectRepositoryInput {
   createdByUserId: string;
   objectType: CognitiveObject["objectType"];
   title: string;
+  objective?: string | null;
   summary?: string | null;
   body?: string | null;
   source: CognitiveObject["source"];
@@ -51,6 +52,7 @@ export class InMemoryCognitiveObjectRepository implements CognitiveObjectReposit
       createdByUserId: input.createdByUserId,
       objectType: input.objectType,
       title: input.title,
+      objective: input.objective ?? null,
       summary: input.summary ?? null,
       body: input.body ?? null,
       status: "draft",
@@ -96,6 +98,7 @@ export function toCognitiveObject(record: CognitiveObjectRecord): CognitiveObjec
     createdByUserId: record.createdByUserId,
     objectType: record.objectType,
     title: record.title,
+    objective: record.objective,
     summary: record.summary,
     body: record.body,
     status: record.status,
@@ -117,6 +120,7 @@ export function toCreateCognitiveObjectValues(
     createdByUserId: input.createdByUserId,
     objectType: input.objectType,
     title: input.title,
+    objective: input.objective ?? null,
     summary: input.summary ?? null,
     body: input.body ?? null,
     source: input.source,

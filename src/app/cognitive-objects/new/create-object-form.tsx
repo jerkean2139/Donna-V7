@@ -46,6 +46,19 @@ export function CreateObjectForm() {
       </label>
 
       <label className="block">
+        <span className="text-sm font-medium">Objective</span>
+        <span className="ml-2 text-xs text-slate-500">What are you trying to accomplish? (decisions)</span>
+        <textarea
+          name="objective"
+          rows={2}
+          maxLength={2000}
+          className="mt-2 w-full rounded-lg border border-slate-300 p-3"
+          aria-invalid={Boolean(fieldErrors.objective)}
+        />
+        <FieldError message={fieldErrors.objective} />
+      </label>
+
+      <label className="block">
         <span className="text-sm font-medium">Summary</span>
         <textarea
           name="summary"

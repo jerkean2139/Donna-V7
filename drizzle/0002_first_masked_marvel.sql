@@ -1,0 +1,1 @@
+ALTER TABLE "cognitive_objects" ADD COLUMN "objective" text;
