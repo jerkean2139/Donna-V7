@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { getTenantContext } from "@/lib/auth/tenant";
 import { relationshipTypes } from "@/lib/cognitive-object/types";
-import { cognitiveGraphRepository } from "@/lib/repositories";
+import { cognitiveGraphRepository, cognitiveObjectRepository } from "@/lib/repositories";
 import { createCognitiveGraphEdge } from "@/lib/cognitive-graph/service";
 
 export async function createRelationshipAction(formData: FormData): Promise<void> {
@@ -26,7 +26,7 @@ export async function createRelationshipAction(formData: FormData): Promise<void
     throw new Error("Relationship strength must be between 0 and 100.");
   }
 
-  await createCognitiveGraphEdge(cognitiveGraphRepository, {
+  await createCognitiveGraphEdge(cognitiveGraphRepository, cognitiveObjectRepository, {
     tenantId: tenant.tenantId,
     fromObjectId,
     toObjectId,
