@@ -37,6 +37,18 @@ export async function createCognitiveGraphEdge(
     throw new DomainError("Both Cognitive Objects must exist in the active tenant.");
   }
 
+  // Friendly duplicate check; the DB unique index is the race-proof backstop.
+  const existingEdges = await repository.listOutgoingEdges(input.fromObjectId, input.tenantId);
+  const duplicate = existingEdges.some(
+    (existing) =>
+      existing.toObjectId === input.toObjectId &&
+      existing.relationshipType === input.relationshipType,
+  );
+
+  if (duplicate) {
+    throw new DomainError("This relationship already exists between these Cognitive Objects.");
+  }
+
   const edge = await repository.createEdge(input);
 
   return {

@@ -10,6 +10,12 @@ export function createDatabase(databaseUrl = process.env.DATABASE_URL): AppDatab
     throw new Error("DATABASE_URL is required to create the Drizzle database client.");
   }
 
-  const client = postgres(databaseUrl);
+  // Bounded pool with idle/connect timeouts so a burst of server renders
+  // cannot exhaust Postgres connections and dead connections get recycled.
+  const client = postgres(databaseUrl, {
+    max: 10,
+    idle_timeout: 20,
+    connect_timeout: 10,
+  });
   return drizzle(client, { schema });
 }

@@ -121,6 +121,34 @@ describe("cognitive graph repository", () => {
     expect(edges).toHaveLength(0);
   });
 
+  it("rejects duplicate edges between the same objects", async () => {
+    const repository = new InMemoryCognitiveGraphRepository();
+    const objectRepository = new InMemoryCognitiveObjectRepository();
+    const from = await seedObject(objectRepository, "tenant_a", "From object");
+    const to = await seedObject(objectRepository, "tenant_a", "To object");
+
+    const input = {
+      tenantId: "tenant_a",
+      fromObjectId: from.id,
+      toObjectId: to.id,
+      relationshipType: "supports" as const,
+      strength: 70,
+      source: "human" as const,
+    };
+
+    await createCognitiveGraphEdge(repository, objectRepository, input);
+
+    await expect(createCognitiveGraphEdge(repository, objectRepository, input)).rejects.toThrow(
+      "This relationship already exists between these Cognitive Objects.",
+    );
+
+    // A different relationship type between the same objects is still allowed.
+    await createCognitiveGraphEdge(repository, objectRepository, {
+      ...input,
+      relationshipType: "references",
+    });
+  });
+
   it("counts edges per tenant only", async () => {
     const repository = new InMemoryCognitiveGraphRepository();
 
