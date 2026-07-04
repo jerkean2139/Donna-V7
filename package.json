@@ -2,6 +2,7 @@
   "name": "donna-v7",
   "version": "0.1.0",
   "private": true,
+  "license": "UNLICENSED",
   "description": "Manumation Intelligence Layer MVP with Cognitive Objects and Cognitive Graph foundation.",
   "scripts": {
     "dev": "next dev",
