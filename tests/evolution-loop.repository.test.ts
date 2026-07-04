@@ -1,3 +1,6 @@
+import { GraphContextRetriever } from "../src/lib/ai/context-retriever";
+import { FakeReasoningEngine } from "../src/lib/ai/fake-engine";
+import { InMemoryCognitiveGraphRepository } from "../src/lib/cognitive-graph/repository";
 import { InMemoryCognitiveObjectRepository } from "../src/lib/cognitive-object/repository";
 import { InMemoryEvolutionLoopRunRepository } from "../src/lib/evolution-loop/repository";
 import {
@@ -5,10 +8,16 @@ import {
   startEvolutionLoopForObject,
 } from "../src/lib/evolution-loop/service";
 
+const reasoningEngine = new FakeReasoningEngine();
+
 describe("evolution loop run repository", () => {
   it("lists loop runs only for the active tenant and object", async () => {
     const objectRepository = new InMemoryCognitiveObjectRepository();
     const loopRepository = new InMemoryEvolutionLoopRunRepository();
+    const contextRetriever = new GraphContextRetriever(
+      new InMemoryCognitiveGraphRepository(),
+      objectRepository,
+    );
 
     const tenantAObject = await objectRepository.create({
       tenantId: "tenant_a",
@@ -32,11 +41,11 @@ describe("evolution loop run repository", () => {
       tags: [],
     });
 
-    await startEvolutionLoopForObject(objectRepository, loopRepository, {
+    await startEvolutionLoopForObject(objectRepository, loopRepository, reasoningEngine, contextRetriever, {
       objectId: tenantAObject.id,
       tenantId: "tenant_a",
     });
-    await startEvolutionLoopForObject(objectRepository, loopRepository, {
+    await startEvolutionLoopForObject(objectRepository, loopRepository, reasoningEngine, contextRetriever, {
       objectId: otherTenantObject.id,
       tenantId: "tenant_b",
     });
@@ -61,6 +70,10 @@ describe("evolution loop run repository", () => {
   it("does not start a loop run for an object outside the active tenant", async () => {
     const objectRepository = new InMemoryCognitiveObjectRepository();
     const loopRepository = new InMemoryEvolutionLoopRunRepository();
+    const contextRetriever = new GraphContextRetriever(
+      new InMemoryCognitiveGraphRepository(),
+      objectRepository,
+    );
 
     const created = await objectRepository.create({
       tenantId: "tenant_a",
@@ -73,7 +86,7 @@ describe("evolution loop run repository", () => {
     });
 
     await expect(
-      startEvolutionLoopForObject(objectRepository, loopRepository, {
+      startEvolutionLoopForObject(objectRepository, loopRepository, reasoningEngine, contextRetriever, {
         objectId: created.id,
         tenantId: "tenant_b",
       }),

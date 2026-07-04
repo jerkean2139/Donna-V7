@@ -20,6 +20,8 @@ import {
   InMemoryOutcomeRepository,
   type OutcomeRepository,
 } from "./outcome/repository";
+import { GraphContextRetriever, type ContextRetriever } from "./ai/context-retriever";
+import { reasoningEngine } from "./ai/engine";
 
 // Central persistence wiring. When DATABASE_URL is set we use the Postgres /
 // Drizzle adapters (shared single client); otherwise everything falls back to
@@ -30,6 +32,15 @@ interface Repositories {
   cognitiveGraphRepository: CognitiveGraphRepository;
   evolutionLoopRunRepository: EvolutionLoopRunRepository;
   outcomeRepository: OutcomeRepository;
+}
+
+// In production, silently falling back to in-memory repositories on a
+// misconfigured DATABASE_URL would look like a working deploy while quietly
+// discarding every write on restart. Fail loud instead (AUDIT.md open item).
+if (process.env.NODE_ENV === "production" && !process.env.DATABASE_URL) {
+  throw new Error(
+    "DATABASE_URL is required in production. Refusing to start on the in-memory fallback.",
+  );
 }
 
 const database: AppDatabase | null = process.env.DATABASE_URL
@@ -85,3 +96,13 @@ export const cognitiveObjectRepository = repositories.cognitiveObjectRepository;
 export const cognitiveGraphRepository = repositories.cognitiveGraphRepository;
 export const evolutionLoopRunRepository = repositories.evolutionLoopRunRepository;
 export const outcomeRepository = repositories.outcomeRepository;
+
+// AI reasoning + context retrieval wiring. The reasoning engine itself picks
+// real-vs-fake based on ANTHROPIC_API_KEY presence (see ai/engine.ts); the
+// retriever is always graph-based today (see ai/context-retriever.ts for the
+// planned semantic-retrieval follow-up).
+export const contextRetriever: ContextRetriever = new GraphContextRetriever(
+  cognitiveGraphRepository,
+  cognitiveObjectRepository,
+);
+export { reasoningEngine };
