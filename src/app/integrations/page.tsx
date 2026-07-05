@@ -24,25 +24,25 @@ export default async function IntegrationsPage() {
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
-      <h1 className="text-3xl font-bold tracking-tight text-slate-950">Integrations</h1>
-      <p className="mt-3 max-w-2xl text-slate-700">
+      <h1 className="text-3xl font-bold tracking-tight text-text-primary">Integrations</h1>
+      <p className="mt-3 max-w-2xl text-text-secondary">
         API keys are encrypted at rest and used only for this workspace&apos;s agent actions. Nothing
         here is ever shown back once saved.
       </p>
 
       <div className="mt-8 space-y-6">
         {statuses.map((status) => (
-          <section key={status.provider} className="rounded-xl border border-slate-200 p-5">
+          <section key={status.provider} className="rounded-xl border border-border-default p-5">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h2 className="font-semibold text-slate-950">{PROVIDER_LABELS[status.provider]}</h2>
-                <p className="mt-1 text-sm text-slate-600">{PROVIDER_HELP[status.provider]}</p>
+                <h2 className="font-semibold text-text-primary">{PROVIDER_LABELS[status.provider]}</h2>
+                <p className="mt-1 text-sm text-text-secondary">{PROVIDER_HELP[status.provider]}</p>
               </div>
               <span
                 className={
                   status.configured
-                    ? "shrink-0 rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700"
-                    : "shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600"
+                    ? "shrink-0 rounded-full bg-[var(--mint-dim)] px-3 py-1 text-xs font-medium text-mint"
+                    : "shrink-0 rounded-full bg-bg-surface-2 px-3 py-1 text-xs font-medium text-text-secondary"
                 }
               >
                 {status.configured ? "Configured" : "Not configured"}

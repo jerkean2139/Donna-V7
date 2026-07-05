@@ -8,6 +8,10 @@ export interface AgentRunRepository {
   create(input: CreateAgentRunInput): Promise<AgentRun>;
   listByObjectForTenant(objectId: string, tenantId: string): Promise<AgentRun[]>;
   findByIdForTenant(id: string, tenantId: string): Promise<AgentRun | null>;
+  // Mission Control activity feed + department strip: recent runs tenant-wide,
+  // bounded, newest first. This is the memory-event feed's fallback source
+  // until Phase 2.5's memory_events stream lands.
+  listRecentForTenant(tenantId: string, limit: number): Promise<AgentRun[]>;
 }
 
 export class InMemoryAgentRunRepository implements AgentRunRepository {
@@ -39,6 +43,13 @@ export class InMemoryAgentRunRepository implements AgentRunRepository {
   async findByIdForTenant(id: string, tenantId: string): Promise<AgentRun | null> {
     const run = this.store.get(id);
     return run && run.tenantId === tenantId ? run : null;
+  }
+
+  async listRecentForTenant(tenantId: string, limit: number): Promise<AgentRun[]> {
+    return Array.from(this.store.values())
+      .filter((run) => run.tenantId === tenantId)
+      .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
+      .slice(0, Math.max(0, limit));
   }
 }
 
@@ -99,5 +110,15 @@ export class DrizzleAgentRunRepository implements AgentRunRepository {
       .where(and(eq(agentRuns.id, id), eq(agentRuns.tenantId, tenantId)))
       .limit(1);
     return record ? toAgentRun(record) : null;
+  }
+
+  async listRecentForTenant(tenantId: string, limit: number): Promise<AgentRun[]> {
+    const records = await this.db
+      .select()
+      .from(agentRuns)
+      .where(eq(agentRuns.tenantId, tenantId))
+      .orderBy(desc(agentRuns.createdAt))
+      .limit(Math.max(0, limit));
+    return records.map(toAgentRun);
   }
 }

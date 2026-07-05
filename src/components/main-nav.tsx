@@ -24,8 +24,8 @@ export function MainNav() {
             aria-current={isActive ? "page" : undefined}
             className={
               isActive
-                ? "text-sm font-semibold text-slate-950"
-                : "text-sm text-slate-700 hover:text-slate-950"
+                ? "text-sm font-semibold text-cyan"
+                : "text-sm text-text-secondary transition-colors hover:text-text-primary"
             }
           >
             {link.label}

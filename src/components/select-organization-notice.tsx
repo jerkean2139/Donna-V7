@@ -6,8 +6,8 @@ import { OrganizationSwitcher } from "@clerk/nextjs";
 export function SelectOrganizationNotice() {
   return (
     <main className="mx-auto max-w-3xl px-6 py-16">
-      <h1 className="text-2xl font-bold tracking-tight text-slate-950">Choose a workspace</h1>
-      <p className="mt-3 text-slate-700">
+      <h1 className="text-2xl font-bold tracking-tight text-text-primary">Choose a workspace</h1>
+      <p className="mt-3 text-text-secondary">
         Donna keeps every workspace&apos;s intelligence fully separated. Select or create an
         organization to continue.
       </p>

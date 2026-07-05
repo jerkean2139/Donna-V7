@@ -17,8 +17,8 @@ export default function GlobalError({ error }: { error: Error & { digest?: strin
     <html lang="en">
       <body>
         <main className="mx-auto max-w-3xl px-6 py-16">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-950">Something went wrong</h1>
-          <p className="mt-3 text-slate-700">
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Something went wrong</h1>
+          <p className="mt-3 text-text-secondary">
             The app hit an unexpected error and could not recover. Reloading the page usually
             fixes this; if it keeps happening, let the team know what you were doing.
           </p>
