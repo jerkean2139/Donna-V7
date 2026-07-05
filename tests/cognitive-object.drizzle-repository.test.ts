@@ -44,6 +44,7 @@ describe("drizzle cognitive object repository mapping", () => {
       confidenceScore: 70,
       tags: ["infra"],
       metadata: { origin: "test" },
+      embedding: null,
       createdAt,
       updatedAt,
     });

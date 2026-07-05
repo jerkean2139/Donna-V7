@@ -10,6 +10,7 @@ import { errorField, logger } from "@/lib/logger";
 import {
   cognitiveObjectRepository,
   contextRetriever,
+  embeddingProvider,
   evolutionLoopRunRepository,
   reasoningEngine,
 } from "@/lib/repositories";
@@ -48,18 +49,22 @@ export async function createCognitiveObjectAction(
   const startedAt = Date.now();
 
   try {
-    const result = await createCognitiveObject(cognitiveObjectRepository, {
-      tenantId: tenant.tenantId,
-      createdByUserId: tenant.userId,
-      objectType: parsed.data.objectType,
-      title: parsed.data.title,
-      objective: parsed.data.objective,
-      summary: parsed.data.summary,
-      body: parsed.data.body,
-      source: parsed.data.source,
-      riskLevel: parsed.data.riskLevel,
-      tags: parsed.data.tags,
-    });
+    const result = await createCognitiveObject(
+      cognitiveObjectRepository,
+      {
+        tenantId: tenant.tenantId,
+        createdByUserId: tenant.userId,
+        objectType: parsed.data.objectType,
+        title: parsed.data.title,
+        objective: parsed.data.objective,
+        summary: parsed.data.summary,
+        body: parsed.data.body,
+        source: parsed.data.source,
+        riskLevel: parsed.data.riskLevel,
+        tags: parsed.data.tags,
+      },
+      embeddingProvider,
+    );
     objectId = result.object.id;
   } catch (error) {
     logger.error("cognitive_object.create.failed", {

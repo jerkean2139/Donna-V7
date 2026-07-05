@@ -23,6 +23,12 @@ import {
 import { GraphContextRetriever, type ContextRetriever } from "./ai/context-retriever";
 import { reasoningEngine } from "./ai/engine";
 import {
+  FakeEmbeddingProvider,
+  VoyageEmbeddingProvider,
+  loadEmbeddingConfig,
+  type EmbeddingProvider,
+} from "./ai/embeddings";
+import {
   DrizzleAgentRunRepository,
   InMemoryAgentRunRepository,
   type AgentRunRepository,
@@ -130,9 +136,15 @@ export const evolutionLoopRunRepository = repositories.evolutionLoopRunRepositor
 export const outcomeRepository = repositories.outcomeRepository;
 
 // AI reasoning + context retrieval wiring. The reasoning engine itself picks
-// real-vs-fake based on ANTHROPIC_API_KEY presence (see ai/engine.ts); the
-// retriever is always graph-based today (see ai/context-retriever.ts for the
-// planned semantic-retrieval follow-up).
+// real-vs-fake based on ANTHROPIC_API_KEY presence (see ai/engine.ts). The
+// embedding provider picks real-vs-fake the same way, keyed off
+// VOYAGE_API_KEY -- this is what keeps object creation and context retrieval
+// keyless in dev/CI/tests (see ai/embeddings.ts).
+const embeddingConfig = loadEmbeddingConfig();
+export const embeddingProvider: EmbeddingProvider = embeddingConfig.apiKey
+  ? new VoyageEmbeddingProvider(embeddingConfig.apiKey, embeddingConfig.model)
+  : new FakeEmbeddingProvider();
+
 export const contextRetriever: ContextRetriever = new GraphContextRetriever(
   cognitiveGraphRepository,
   cognitiveObjectRepository,

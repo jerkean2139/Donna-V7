@@ -12,7 +12,14 @@ import {
   uniqueIndex,
   uuid,
   varchar,
+  vector,
 } from "drizzle-orm/pg-core";
+
+// Fixed by the pgvector column below -- every embedding written or queried
+// must be exactly this length. Matches voyage-3-lite's native output size
+// (see src/lib/ai/embeddings.ts); changing EMBEDDING_MODEL to a model with a
+// different output size requires a new migration, not just an env change.
+export const EMBEDDING_DIMENSIONS = 512;
 
 export const cognitiveObjectTypeEnum = pgEnum("cognitive_object_type", [
   "decision",
@@ -83,6 +90,12 @@ export const cognitiveObjects = pgTable(
     confidenceScore: integer("confidence_score"),
     tags: jsonb("tags").$type<string[]>().notNull().default([]),
     metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull().default({}),
+    // Embed-on-create only (Cognitive Objects have no update path today);
+    // null until the embedding provider call completes. Never selected into
+    // the public CognitiveObject type -- see toCognitiveObject in
+    // cognitive-object/repository.ts -- so a raw vector never reaches a page
+    // or an API response.
+    embedding: vector("embedding", { dimensions: EMBEDDING_DIMENSIONS }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -94,6 +107,7 @@ export const cognitiveObjects = pgTable(
       "cognitive_objects_confidence_score_range",
       sql`${table.confidenceScore} IS NULL OR (${table.confidenceScore} >= 0 AND ${table.confidenceScore} <= 100)`,
     ),
+    index("cognitive_objects_embedding_hnsw_idx").using("hnsw", table.embedding.op("vector_cosine_ops")),
   ],
 );
 

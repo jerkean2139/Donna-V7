@@ -89,3 +89,133 @@ describe("cognitive object repository", () => {
     expect(clampListOptions({ limit: 0 })).toEqual({ limit: 1, offset: 0 });
   });
 });
+
+describe("findSemanticNeighbors", () => {
+  it("returns [] when the object has no stored embedding", async () => {
+    const repository = new InMemoryCognitiveObjectRepository();
+    const object = await repository.create({
+      tenantId: "tenant_a",
+      createdByUserId: "user_1",
+      objectType: "decision",
+      title: "No embedding yet",
+      source: "manual",
+      riskLevel: "low",
+      tags: [],
+    });
+
+    const neighbors = await repository.findSemanticNeighbors(object.id, "tenant_a", 5);
+    expect(neighbors).toEqual([]);
+  });
+
+  it("returns [] for an object that doesn't belong to the tenant", async () => {
+    const repository = new InMemoryCognitiveObjectRepository();
+    const object = await repository.create({
+      tenantId: "tenant_a",
+      createdByUserId: "user_1",
+      objectType: "decision",
+      title: "Tenant A object",
+      source: "manual",
+      riskLevel: "low",
+      tags: [],
+      embedding: [1, 0, 0],
+    });
+
+    const neighbors = await repository.findSemanticNeighbors(object.id, "tenant_b", 5);
+    expect(neighbors).toEqual([]);
+  });
+
+  it("ranks other objects by cosine similarity, closest first", async () => {
+    const repository = new InMemoryCognitiveObjectRepository();
+    const source = await repository.create({
+      tenantId: "tenant_a",
+      createdByUserId: "user_1",
+      objectType: "decision",
+      title: "Source",
+      source: "manual",
+      riskLevel: "low",
+      tags: [],
+      embedding: [1, 0, 0],
+    });
+    const close = await repository.create({
+      tenantId: "tenant_a",
+      createdByUserId: "user_1",
+      objectType: "decision",
+      title: "Close neighbor",
+      source: "manual",
+      riskLevel: "low",
+      tags: [],
+      embedding: [0.9, 0.1, 0],
+    });
+    const far = await repository.create({
+      tenantId: "tenant_a",
+      createdByUserId: "user_1",
+      objectType: "decision",
+      title: "Far neighbor",
+      source: "manual",
+      riskLevel: "low",
+      tags: [],
+      embedding: [0, 1, 0],
+    });
+
+    const neighbors = await repository.findSemanticNeighbors(source.id, "tenant_a", 5);
+
+    expect(neighbors.map((n) => n.objectId)).toEqual([close.id, far.id]);
+    expect(neighbors[0]!.similarity).toBeGreaterThan(neighbors[1]!.similarity);
+  });
+
+  it("never returns a neighbor from another tenant", async () => {
+    const repository = new InMemoryCognitiveObjectRepository();
+    const source = await repository.create({
+      tenantId: "tenant_a",
+      createdByUserId: "user_1",
+      objectType: "decision",
+      title: "Source",
+      source: "manual",
+      riskLevel: "low",
+      tags: [],
+      embedding: [1, 0, 0],
+    });
+    await repository.create({
+      tenantId: "tenant_b",
+      createdByUserId: "user_2",
+      objectType: "decision",
+      title: "Other tenant's near-identical object",
+      source: "manual",
+      riskLevel: "low",
+      tags: [],
+      embedding: [1, 0, 0],
+    });
+
+    const neighbors = await repository.findSemanticNeighbors(source.id, "tenant_a", 5);
+    expect(neighbors).toEqual([]);
+  });
+
+  it("respects the limit", async () => {
+    const repository = new InMemoryCognitiveObjectRepository();
+    const source = await repository.create({
+      tenantId: "tenant_a",
+      createdByUserId: "user_1",
+      objectType: "decision",
+      title: "Source",
+      source: "manual",
+      riskLevel: "low",
+      tags: [],
+      embedding: [1, 0, 0],
+    });
+    for (let i = 0; i < 5; i += 1) {
+      await repository.create({
+        tenantId: "tenant_a",
+        createdByUserId: "user_1",
+        objectType: "decision",
+        title: `Neighbor ${i}`,
+        source: "manual",
+        riskLevel: "low",
+        tags: [],
+        embedding: [0.9, 0.1, 0],
+      });
+    }
+
+    const neighbors = await repository.findSemanticNeighbors(source.id, "tenant_a", 2);
+    expect(neighbors).toHaveLength(2);
+  });
+});

@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, ne, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { cognitiveObjects } from "../../db/schema";
 import type * as dbSchema from "../../db/schema";
@@ -16,6 +16,15 @@ export interface CreateCognitiveObjectRepositoryInput {
   riskLevel: CognitiveObject["riskLevel"];
   tags: string[];
   metadata?: Record<string, unknown>;
+  // Set at creation only -- Cognitive Objects have no update path today, so
+  // there is no re-embed-on-write case yet. Never part of the public
+  // CognitiveObject type; see toCognitiveObject below.
+  embedding?: number[] | null;
+}
+
+export interface SemanticNeighbor {
+  objectId: string;
+  similarity: number;
 }
 
 export interface ListByTenantOptions {
@@ -38,10 +47,30 @@ export interface CognitiveObjectRepository {
   create(input: CreateCognitiveObjectRepositoryInput): Promise<CognitiveObject>;
   listByTenant(tenantId: string, options?: ListByTenantOptions): Promise<CognitiveObject[]>;
   findByIdForTenant(id: string, tenantId: string): Promise<CognitiveObject | null>;
+  // Cosine-nearest other objects in the same tenant to the given object's
+  // own stored embedding, highest similarity first. Returns [] if the
+  // object has no embedding yet (provider call failed or hasn't run) or
+  // doesn't belong to the tenant -- callers treat that as "no semantic
+  // context available," never an error.
+  findSemanticNeighbors(objectId: string, tenantId: string, limit: number): Promise<SemanticNeighbor[]>;
+}
+
+function cosineSimilarity(a: number[], b: number[]): number {
+  let dot = 0;
+  let magA = 0;
+  let magB = 0;
+  for (let i = 0; i < a.length; i += 1) {
+    dot += a[i]! * b[i]!;
+    magA += a[i]! * a[i]!;
+    magB += b[i]! * b[i]!;
+  }
+  const magnitude = Math.sqrt(magA) * Math.sqrt(magB);
+  return magnitude === 0 ? 0 : dot / magnitude;
 }
 
 export class InMemoryCognitiveObjectRepository implements CognitiveObjectRepository {
   private readonly store = new Map<string, CognitiveObject>();
+  private readonly embeddings = new Map<string, number[]>();
 
   async create(input: CreateCognitiveObjectRepositoryInput): Promise<CognitiveObject> {
     const now = new Date();
@@ -66,6 +95,9 @@ export class InMemoryCognitiveObjectRepository implements CognitiveObjectReposit
     };
 
     this.store.set(object.id, object);
+    if (input.embedding) {
+      this.embeddings.set(object.id, input.embedding);
+    }
     return object;
   }
 
@@ -85,6 +117,20 @@ export class InMemoryCognitiveObjectRepository implements CognitiveObjectReposit
     }
 
     return object;
+  }
+
+  async findSemanticNeighbors(objectId: string, tenantId: string, limit: number): Promise<SemanticNeighbor[]> {
+    const source = await this.findByIdForTenant(objectId, tenantId);
+    const sourceEmbedding = source ? this.embeddings.get(objectId) : undefined;
+    if (!sourceEmbedding) {
+      return [];
+    }
+
+    return Array.from(this.embeddings.entries())
+      .filter(([id, embedding]) => id !== objectId && this.store.get(id)?.tenantId === tenantId && embedding.length === sourceEmbedding.length)
+      .map(([id, embedding]) => ({ objectId: id, similarity: cosineSimilarity(sourceEmbedding, embedding) }))
+      .sort((a, b) => b.similarity - a.similarity)
+      .slice(0, limit);
   }
 }
 
@@ -127,7 +173,12 @@ export function toCreateCognitiveObjectValues(
     riskLevel: input.riskLevel,
     tags: input.tags,
     metadata: input.metadata ?? {},
+    embedding: input.embedding ?? null,
   };
+}
+
+function toVectorLiteral(embedding: number[]): string {
+  return `[${embedding.join(",")}]`;
 }
 
 export class DrizzleCognitiveObjectRepository implements CognitiveObjectRepository {
@@ -167,5 +218,35 @@ export class DrizzleCognitiveObjectRepository implements CognitiveObjectReposito
       .limit(1);
 
     return record ? toCognitiveObject(record) : null;
+  }
+
+  async findSemanticNeighbors(objectId: string, tenantId: string, limit: number): Promise<SemanticNeighbor[]> {
+    const [source] = await this.db
+      .select({ embedding: cognitiveObjects.embedding })
+      .from(cognitiveObjects)
+      .where(and(eq(cognitiveObjects.id, objectId), eq(cognitiveObjects.tenantId, tenantId)))
+      .limit(1);
+
+    if (!source?.embedding) {
+      return [];
+    }
+
+    const queryVector = toVectorLiteral(source.embedding);
+    const distance = sql<number>`${cognitiveObjects.embedding} <=> ${queryVector}::vector`;
+
+    const records = await this.db
+      .select({ id: cognitiveObjects.id, distance })
+      .from(cognitiveObjects)
+      .where(
+        and(
+          eq(cognitiveObjects.tenantId, tenantId),
+          ne(cognitiveObjects.id, objectId),
+          sql`${cognitiveObjects.embedding} IS NOT NULL`,
+        ),
+      )
+      .orderBy(distance)
+      .limit(limit);
+
+    return records.map((record) => ({ objectId: record.id, similarity: 1 - record.distance }));
   }
 }
