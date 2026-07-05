@@ -3,6 +3,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { tryGetTenantContext } from "@/lib/auth/tenant";
 import { SelectOrganizationNotice } from "@/components/select-organization-notice";
 import { WelcomeBriefing } from "@/components/welcome-briefing";
+import { RiskBadge, StatusBadge } from "@/components/badges";
 import { cognitiveGraphRepository, cognitiveObjectRepository } from "@/lib/repositories";
 import { listTenantCognitiveObjects } from "@/lib/cognitive-object/service";
 import { computeDashboardMetrics } from "@/lib/dashboard/metrics";
@@ -100,12 +101,12 @@ export default async function DashboardPage() {
                   >
                     <span className="min-w-0">
                       <span className="block truncate font-medium text-slate-900">{object.title}</span>
-                      <span className="text-xs text-slate-500 capitalize">
-                        {object.objectType} · {object.status.replace(/_/g, " ")}
+                      <span className="mt-1 flex items-center gap-2 text-xs text-slate-500 capitalize">
+                        {object.objectType} <StatusBadge status={object.status} />
                       </span>
                     </span>
-                    <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs capitalize text-slate-700">
-                      {object.riskLevel} risk
+                    <span className="shrink-0">
+                      <RiskBadge level={object.riskLevel} />
                     </span>
                   </Link>
                 </li>
