@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { tryGetTenantContext } from "@/lib/auth/tenant";
 import { SelectOrganizationNotice } from "@/components/select-organization-notice";
+import { RiskBadge, StatusBadge } from "@/components/badges";
 import {
   cognitiveObjectRepository,
   cognitiveGraphRepository,
@@ -47,13 +48,12 @@ export default async function CognitiveObjectDetailPage({ params }: CognitiveObj
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-10">
-      <div className="flex items-center gap-3">
-        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs capitalize text-slate-700">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-medium capitalize text-slate-700">
           {object.objectType}
         </span>
-        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs capitalize text-slate-700">
-          Risk: {object.riskLevel}
-        </span>
+        <StatusBadge status={object.status} />
+        <RiskBadge level={object.riskLevel} />
       </div>
 
       <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-950">{object.title}</h1>

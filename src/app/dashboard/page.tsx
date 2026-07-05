@@ -1,9 +1,13 @@
 import Link from "next/link";
+import { currentUser } from "@clerk/nextjs/server";
 import { tryGetTenantContext } from "@/lib/auth/tenant";
 import { SelectOrganizationNotice } from "@/components/select-organization-notice";
+import { WelcomeBriefing } from "@/components/welcome-briefing";
+import { RiskBadge, StatusBadge } from "@/components/badges";
 import { cognitiveGraphRepository, cognitiveObjectRepository } from "@/lib/repositories";
 import { listTenantCognitiveObjects } from "@/lib/cognitive-object/service";
 import { computeDashboardMetrics } from "@/lib/dashboard/metrics";
+import type { BriefingObject } from "@/lib/dashboard/briefing";
 
 export default async function DashboardPage() {
   const tenant = await tryGetTenantContext();
@@ -12,12 +16,26 @@ export default async function DashboardPage() {
     return <SelectOrganizationNotice />;
   }
 
-  const [objects, edges] = await Promise.all([
+  const [objects, edges, user] = await Promise.all([
     listTenantCognitiveObjects(cognitiveObjectRepository, tenant.tenantId),
     cognitiveGraphRepository.listByTenant(tenant.tenantId),
+    currentUser(),
   ]);
 
   const metrics = computeDashboardMetrics(objects, edges);
+
+  // Serialize the newest objects for the client-side welcome briefing. It
+  // computes "since your last visit" deltas against a localStorage timestamp,
+  // so it needs the raw createdAt of recent objects.
+  const briefingObjects: BriefingObject[] = objects.slice(0, 30).map((object) => ({
+    id: object.id,
+    title: object.title,
+    objectType: object.objectType,
+    status: object.status,
+    riskLevel: object.riskLevel,
+    createdAt: object.createdAt.toISOString(),
+  }));
+  const firstName = user?.firstName ?? null;
 
   const tiles = [
     { label: "Open Objects", value: metrics.openObjects },
@@ -39,6 +57,14 @@ export default async function DashboardPage() {
           New object
         </Link>
       </div>
+
+      <WelcomeBriefing
+        tenantId={tenant.tenantId}
+        userName={firstName}
+        objects={briefingObjects}
+        approvalsNeeded={metrics.approvalsNeeded}
+        graphLinks={metrics.graphLinks}
+      />
 
       <section aria-label="Workspace metrics" className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {tiles.map((tile) => (
@@ -75,12 +101,12 @@ export default async function DashboardPage() {
                   >
                     <span className="min-w-0">
                       <span className="block truncate font-medium text-slate-900">{object.title}</span>
-                      <span className="text-xs text-slate-500 capitalize">
-                        {object.objectType} · {object.status.replace(/_/g, " ")}
+                      <span className="mt-1 flex items-center gap-2 text-xs text-slate-500 capitalize">
+                        {object.objectType} <StatusBadge status={object.status} />
                       </span>
                     </span>
-                    <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs capitalize text-slate-700">
-                      {object.riskLevel} risk
+                    <span className="shrink-0">
+                      <RiskBadge level={object.riskLevel} />
                     </span>
                   </Link>
                 </li>

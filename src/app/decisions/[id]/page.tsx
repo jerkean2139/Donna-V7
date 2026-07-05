@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { tryGetTenantContext } from "@/lib/auth/tenant";
 import { SelectOrganizationNotice } from "@/components/select-organization-notice";
+import { RiskBadge, StatusBadge } from "@/components/badges";
 import {
   cognitiveObjectRepository,
   evolutionLoopRunRepository,
@@ -51,13 +52,9 @@ export default async function DecisionDetailPage({ params }: DecisionDetailPageP
 
       <div className="mt-4 flex items-start justify-between gap-4">
         <h1 className="text-3xl font-bold tracking-tight text-slate-950">{decision.title}</h1>
-        <div className="flex shrink-0 gap-2">
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs capitalize text-slate-700">
-            {decision.status.replace(/_/g, " ")}
-          </span>
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs capitalize text-slate-700">
-            {decision.riskLevel} risk
-          </span>
+        <div className="flex shrink-0 flex-wrap justify-end gap-2">
+          <StatusBadge status={decision.status} />
+          <RiskBadge level={decision.riskLevel} />
         </div>
       </div>
 

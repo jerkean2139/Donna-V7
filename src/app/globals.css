@@ -21,3 +21,129 @@ a {
   outline-offset: 2px;
   border-radius: 2px;
 }
+
+/* ==========================================================================
+   Neon "on-air" welcome briefing
+   A dark command-console panel that glows on the light dashboard. All motion
+   is gated behind prefers-reduced-motion.
+   ========================================================================== */
+
+.donna-briefing {
+  background:
+    radial-gradient(120% 140% at 15% 0%, rgba(34, 211, 238, 0.18), transparent 55%),
+    radial-gradient(120% 160% at 100% 100%, rgba(217, 70, 239, 0.2), transparent 55%),
+    linear-gradient(160deg, #0b1220 0%, #0f172a 55%, #0b1220 100%);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  box-shadow:
+    0 0 0 1px rgba(34, 211, 238, 0.06),
+    0 20px 60px -20px rgba(8, 145, 178, 0.45);
+}
+
+/* On-air badge */
+.donna-onair {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: rgba(165, 243, 252, 0.85);
+}
+.donna-onair-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: #22d3ee;
+  box-shadow: 0 0 10px 2px rgba(34, 211, 238, 0.9);
+}
+.donna-briefing[data-speaking="true"] .donna-onair {
+  color: #fecaca;
+}
+.donna-briefing[data-speaking="true"] .donna-onair-dot {
+  background: #f43f5e;
+  box-shadow: 0 0 10px 2px rgba(244, 63, 94, 0.95);
+  animation: donna-blink 1s steps(2, jump-none) infinite;
+}
+
+/* Mic button */
+.donna-mic {
+  background: radial-gradient(circle at 50% 40%, rgba(34, 211, 238, 0.25), rgba(15, 23, 42, 0.9));
+  border: 1px solid rgba(34, 211, 238, 0.5);
+  box-shadow:
+    0 0 20px rgba(34, 211, 238, 0.35),
+    inset 0 0 18px rgba(34, 211, 238, 0.2);
+  color: #cffafe;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+  cursor: pointer;
+}
+.donna-mic:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 30px rgba(34, 211, 238, 0.55),
+    inset 0 0 22px rgba(34, 211, 238, 0.28);
+}
+
+/* Concentric pulse rings — idle "breathing", faster while speaking */
+.donna-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 1px solid rgba(34, 211, 238, 0.55);
+  opacity: 0;
+  animation: donna-pulse 3s ease-out infinite;
+}
+.donna-ring-2 {
+  animation-delay: 1.5s;
+}
+.donna-briefing[data-speaking="true"] .donna-ring {
+  border-color: rgba(244, 63, 94, 0.55);
+  animation-duration: 1.6s;
+}
+.donna-briefing[data-speaking="true"] .donna-ring-2 {
+  animation-delay: 0.8s;
+}
+
+/* Equalizer bars while speaking */
+.donna-eq {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 34px;
+}
+.donna-eq > span {
+  width: 3px;
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #67e8f9, #22d3ee);
+  box-shadow: 0 0 6px rgba(34, 211, 238, 0.8);
+  animation: donna-bar 0.9s ease-in-out infinite;
+}
+
+@keyframes donna-pulse {
+  0% { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+@keyframes donna-bar {
+  0%, 100% { transform: scaleY(0.35); }
+  50% { transform: scaleY(1); }
+}
+@keyframes donna-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0.25; }
+}
+
+/* Respect reduced-motion: keep the neon look, drop the animation. */
+@media (prefers-reduced-motion: reduce) {
+  .donna-ring,
+  .donna-eq > span,
+  .donna-onair-dot {
+    animation: none !important;
+  }
+  .donna-ring {
+    opacity: 0.4;
+  }
+  .donna-eq > span {
+    transform: scaleY(0.7);
+  }
+}

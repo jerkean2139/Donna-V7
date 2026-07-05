@@ -5,6 +5,7 @@ import { cognitiveObjectRepository } from "@/lib/repositories";
 import { MAX_LIST_LIMIT } from "@/lib/cognitive-object/repository";
 import { listTenantCognitiveObjects } from "@/lib/cognitive-object/service";
 import { filterCognitiveObjects } from "@/lib/cognitive-object/search";
+import { RiskBadge, StatusBadge } from "@/components/badges";
 import { cognitiveObjectTypes, type CognitiveObjectType } from "@/lib/cognitive-object/types";
 import type { CognitiveObject } from "@/lib/cognitive-object/types";
 
@@ -130,13 +131,17 @@ export default async function CognitiveObjectsPage({ searchParams }: CognitiveOb
               href={`/cognitive-objects/${object.id}`}
               className="block rounded-xl border border-slate-200 p-5 hover:bg-slate-50"
             >
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex items-start justify-between gap-4">
                 <h2 className="font-semibold">{object.title}</h2>
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs capitalize text-slate-700">
+                <span className="inline-flex shrink-0 items-center rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-medium capitalize text-slate-700">
                   {object.objectType}
                 </span>
               </div>
               <p className="mt-2 text-sm text-slate-600">{object.summary ?? "No summary yet."}</p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <StatusBadge status={object.status} />
+                <RiskBadge level={object.riskLevel} />
+              </div>
             </Link>
           ))
         )}

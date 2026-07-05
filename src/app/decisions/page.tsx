@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { tryGetTenantContext } from "@/lib/auth/tenant";
 import { SelectOrganizationNotice } from "@/components/select-organization-notice";
+import { StatusBadge } from "@/components/badges";
 import { cognitiveObjectRepository } from "@/lib/repositories";
 import { listTenantDecisionObjects } from "@/lib/decision/service";
 
@@ -46,8 +47,8 @@ export default async function DecisionsPage() {
             >
               <div className="flex items-center justify-between gap-4">
                 <h2 className="font-semibold text-slate-900">{decision.title}</h2>
-                <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs capitalize text-slate-700">
-                  {decision.status.replace(/_/g, " ")}
+                <span className="shrink-0">
+                  <StatusBadge status={decision.status} />
                 </span>
               </div>
               <p className="mt-2 text-sm text-slate-600">
