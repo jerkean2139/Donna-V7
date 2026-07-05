@@ -18,7 +18,7 @@ interface RelationshipFormProps {
 
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
-  return <p className="mt-1 text-sm text-red-600" role="alert">{message}</p>;
+  return <p className="mt-1 text-sm text-red" role="alert">{message}</p>;
 }
 
 export function RelationshipForm({ fromObjectId, candidates }: RelationshipFormProps) {
@@ -28,7 +28,7 @@ export function RelationshipForm({ fromObjectId, candidates }: RelationshipFormP
   return (
     <form action={formAction} className="mt-8 space-y-6" aria-busy={isPending}>
       {state.status === "error" && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700" role="alert" aria-live="polite">
+        <div className="rounded-lg border border-red/30 bg-[var(--red-dim)] p-4 text-sm text-red" role="alert" aria-live="polite">
           {state.message}
         </div>
       )}
@@ -40,7 +40,7 @@ export function RelationshipForm({ fromObjectId, candidates }: RelationshipFormP
         <select
           name="toObjectId"
           required
-          className="mt-2 w-full rounded-lg border border-slate-300 p-3"
+          className="mt-2 w-full rounded-lg border border-border-default p-3"
           aria-invalid={Boolean(fieldErrors.toObjectId)}
           defaultValue=""
         >
@@ -60,7 +60,7 @@ export function RelationshipForm({ fromObjectId, candidates }: RelationshipFormP
         <span className="text-sm font-medium">Relationship type</span>
         <select
           name="relationshipType"
-          className="mt-2 w-full rounded-lg border border-slate-300 p-3"
+          className="mt-2 w-full rounded-lg border border-border-default p-3"
           aria-invalid={Boolean(fieldErrors.relationshipType)}
         >
           {relationshipTypes.map((type) => (
@@ -81,7 +81,7 @@ export function RelationshipForm({ fromObjectId, candidates }: RelationshipFormP
           max={100}
           step={1}
           defaultValue={60}
-          className="mt-2 w-full rounded-lg border border-slate-300 p-3"
+          className="mt-2 w-full rounded-lg border border-border-default p-3"
           aria-invalid={Boolean(fieldErrors.strength)}
         />
         <FieldError message={fieldErrors.strength} />
@@ -93,7 +93,7 @@ export function RelationshipForm({ fromObjectId, candidates }: RelationshipFormP
           name="evidenceSummary"
           rows={3}
           maxLength={2000}
-          className="mt-2 w-full rounded-lg border border-slate-300 p-3"
+          className="mt-2 w-full rounded-lg border border-border-default p-3"
           aria-invalid={Boolean(fieldErrors.evidenceSummary)}
         />
         <FieldError message={fieldErrors.evidenceSummary} />
@@ -102,7 +102,7 @@ export function RelationshipForm({ fromObjectId, candidates }: RelationshipFormP
       <button
         type="submit"
         disabled={isPending}
-        className="rounded-lg bg-slate-950 px-5 py-3 text-white disabled:cursor-not-allowed disabled:opacity-60"
+        className="rounded-lg bg-cyan px-5 py-3 text-bg-base disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isPending ? "Creating…" : "Create relationship"}
       </button>

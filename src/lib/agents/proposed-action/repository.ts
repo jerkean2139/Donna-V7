@@ -16,6 +16,14 @@ export interface ProposedActionRepository {
   create(input: CreateProposedActionInput): Promise<ProposedAction>;
   findByIdForTenant(id: string, tenantId: string): Promise<ProposedAction | null>;
   listByObjectForTenant(objectId: string, tenantId: string): Promise<ProposedAction[]>;
+  // Mission Control: the "Needs You" queue -- every action still in "proposed"
+  // that governance flagged for human approval, tenant-wide, newest first.
+  // Unbounded window is intentional: an old pending approval must never fall
+  // off the queue just because newer runs happened.
+  listPendingApprovalForTenant(tenantId: string): Promise<ProposedAction[]>;
+  // Mission Control metrics + feed: the most recent actions of any status,
+  // bounded, newest first.
+  listRecentForTenant(tenantId: string, limit: number): Promise<ProposedAction[]>;
   updateStatus(input: UpdateProposedActionStatusInput): Promise<ProposedAction>;
 }
 
@@ -54,6 +62,22 @@ export class InMemoryProposedActionRepository implements ProposedActionRepositor
     return Array.from(this.store.values())
       .filter((action) => action.tenantId === tenantId && action.objectId === objectId)
       .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime());
+  }
+
+  async listPendingApprovalForTenant(tenantId: string): Promise<ProposedAction[]> {
+    return Array.from(this.store.values())
+      .filter(
+        (action) =>
+          action.tenantId === tenantId && action.status === "proposed" && action.approvalRequired,
+      )
+      .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime());
+  }
+
+  async listRecentForTenant(tenantId: string, limit: number): Promise<ProposedAction[]> {
+    return Array.from(this.store.values())
+      .filter((action) => action.tenantId === tenantId)
+      .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
+      .slice(0, Math.max(0, limit));
   }
 
   async updateStatus(input: UpdateProposedActionStatusInput): Promise<ProposedAction> {
@@ -143,6 +167,31 @@ export class DrizzleProposedActionRepository implements ProposedActionRepository
       .from(proposedActions)
       .where(and(eq(proposedActions.objectId, objectId), eq(proposedActions.tenantId, tenantId)))
       .orderBy(desc(proposedActions.createdAt));
+    return records.map(toProposedAction);
+  }
+
+  async listPendingApprovalForTenant(tenantId: string): Promise<ProposedAction[]> {
+    const records = await this.db
+      .select()
+      .from(proposedActions)
+      .where(
+        and(
+          eq(proposedActions.tenantId, tenantId),
+          eq(proposedActions.status, "proposed"),
+          eq(proposedActions.approvalRequired, true),
+        ),
+      )
+      .orderBy(desc(proposedActions.createdAt));
+    return records.map(toProposedAction);
+  }
+
+  async listRecentForTenant(tenantId: string, limit: number): Promise<ProposedAction[]> {
+    const records = await this.db
+      .select()
+      .from(proposedActions)
+      .where(eq(proposedActions.tenantId, tenantId))
+      .orderBy(desc(proposedActions.createdAt))
+      .limit(Math.max(0, limit));
     return records.map(toProposedAction);
   }
 
