@@ -70,7 +70,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                   when="signed-in"
                   fallback={
                     <SignInButton>
-                      <button className="rounded-lg bg-slate-950 px-4 py-2 text-sm text-white">
+                      <button className="rounded-lg bg-gradient-to-br from-cyan-400 to-indigo-500 px-4 py-2 text-sm font-semibold text-[#06080f]">
                         Sign in
                       </button>
                     </SignInButton>

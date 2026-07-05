@@ -15,13 +15,13 @@ export function SelectOrganizationNotice() {
         </svg>
       </span>
 
-      <h1 className="mt-5 text-2xl font-bold tracking-tight text-slate-950">Choose a workspace</h1>
-      <p className="mt-3 max-w-md text-slate-600">
+      <h1 className="mt-5 text-2xl font-bold tracking-tight text-ink">Choose a workspace</h1>
+      <p className="mt-3 max-w-md text-muted">
         Donna keeps every workspace&apos;s intelligence fully separated. Select or create an
         organization to continue.
       </p>
 
-      <div className="mt-8 w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="mt-8 w-full rounded-2xl border border-hairline bg-white p-6 shadow-sm">
         <OrganizationSwitcher
           hidePersonal
           afterSelectOrganizationUrl="/dashboard"

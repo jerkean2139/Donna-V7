@@ -90,7 +90,7 @@ export function InstallPrompt() {
       role="dialog"
       aria-label="Install Donna"
       // Sits above the mobile bottom nav (which is h≈64px + safe area).
-      className="fixed inset-x-3 bottom-[calc(72px+env(safe-area-inset-bottom))] z-50 mx-auto max-w-md rounded-2xl border border-slate-200 bg-white p-4 shadow-lg sm:inset-x-auto sm:right-4 sm:bottom-4 sm:w-96"
+      className="donna-card fixed inset-x-3 bottom-[calc(72px+env(safe-area-inset-bottom))] z-50 mx-auto max-w-md rounded-2xl p-4 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.8)] sm:inset-x-auto sm:right-4 sm:bottom-4 sm:w-96"
     >
       <div className="flex items-start gap-3">
         <span aria-hidden="true" className="shrink-0">
@@ -98,13 +98,13 @@ export function InstallPrompt() {
           <img src="/icon-192.png" alt="" width={40} height={40} className="rounded-lg" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="font-semibold text-slate-950">Install Donna</p>
+          <p className="font-semibold text-ink">Install Donna</p>
           {mode === "prompt" ? (
-            <p className="mt-0.5 text-sm text-slate-600">
+            <p className="mt-0.5 text-sm text-muted">
               Add it to your home screen for a full-screen, app-like experience.
             </p>
           ) : (
-            <p className="mt-0.5 text-sm text-slate-600">
+            <p className="mt-0.5 text-sm text-muted">
               Tap the Share button, then <span className="font-medium">Add to Home Screen</span>.
             </p>
           )}
@@ -113,7 +113,7 @@ export function InstallPrompt() {
               <button
                 type="button"
                 onClick={install}
-                className="rounded-lg bg-slate-950 px-3.5 py-1.5 text-sm font-medium text-white"
+                className="rounded-lg bg-gradient-to-br from-cyan-400 to-indigo-500 px-3.5 py-1.5 text-sm font-semibold text-[#06080f]"
               >
                 Install
               </button>
@@ -121,7 +121,7 @@ export function InstallPrompt() {
             <button
               type="button"
               onClick={dismiss}
-              className="rounded-lg px-3 py-1.5 text-sm text-slate-500 hover:bg-slate-100"
+              className="rounded-lg px-3 py-1.5 text-sm text-muted transition-colors hover:text-ink"
             >
               Not now
             </button>
@@ -131,7 +131,7 @@ export function InstallPrompt() {
           type="button"
           onClick={dismiss}
           aria-label="Dismiss install prompt"
-          className="shrink-0 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+          className="shrink-0 rounded-full p-1 text-faint transition-colors hover:text-ink"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
             <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" />
