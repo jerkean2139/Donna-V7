@@ -96,7 +96,7 @@ export function WelcomeBriefing({
       <button
         type="button"
         onClick={() => setDismissed(false)}
-        className="mt-2 inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
+        className="mt-2 inline-flex items-center gap-2 rounded-lg border border-hairline px-3 py-1.5 text-sm text-muted transition-colors hover:text-ink"
       >
         <span aria-hidden="true">🎙️</span> Replay briefing
       </button>
@@ -105,7 +105,7 @@ export function WelcomeBriefing({
 
   if (!init) {
     // Reserve height so the dashboard doesn't jump when the briefing mounts.
-    return <div className="mt-2 h-[220px] animate-pulse rounded-2xl bg-slate-100" aria-hidden="true" />;
+    return <div className="mt-2 h-[220px] animate-pulse rounded-2xl bg-white/5" aria-hidden="true" />;
   }
 
   const { briefing, voiceSupported } = init;

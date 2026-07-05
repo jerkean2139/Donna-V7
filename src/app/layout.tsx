@@ -47,14 +47,17 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           >
             Skip to content
           </a>
-          <header className="border-b border-slate-200">
+          <header className="sticky top-0 z-30 border-b border-hairline bg-canvas/80 backdrop-blur">
             <nav
               aria-label="Main navigation"
               className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-4"
             >
               <div className="flex items-center gap-6">
-                <Link href="/" className="font-semibold tracking-tight text-slate-950">
-                  Donna V7
+                <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight text-ink">
+                  <span className="donna-display text-lg font-bold">Donna</span>
+                  <span className="rounded-md bg-white/5 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-accent ring-1 ring-inset ring-accent/30">
+                    OS
+                  </span>
                 </Link>
                 <Show when="signed-in">
                   <div className="hidden items-center gap-6 sm:flex">

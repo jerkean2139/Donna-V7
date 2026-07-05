@@ -65,7 +65,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur pb-[env(safe-area-inset-bottom)] sm:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-hairline bg-canvas/90 backdrop-blur pb-[env(safe-area-inset-bottom)] sm:hidden"
     >
       <ul className="mx-auto flex max-w-md items-stretch justify-around">
         {tabs.map((tab) => {
@@ -76,10 +76,10 @@ export function BottomNav() {
                 href={tab.href}
                 aria-current={active ? "page" : undefined}
                 className={`flex flex-col items-center gap-1 py-2 text-[11px] font-medium transition-colors ${
-                  active ? "text-slate-950" : "text-slate-500"
+                  active ? "text-ink" : "text-faint"
                 }`}
               >
-                <span className={`h-6 w-6 ${active ? "text-cyan-600" : ""}`}>{tab.icon}</span>
+                <span className={`h-6 w-6 ${active ? "text-accent" : ""}`}>{tab.icon}</span>
                 {tab.label}
               </Link>
             </li>

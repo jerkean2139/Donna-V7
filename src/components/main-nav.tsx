@@ -23,8 +23,8 @@ export function MainNav() {
             aria-current={isActive ? "page" : undefined}
             className={
               isActive
-                ? "text-sm font-semibold text-slate-950"
-                : "text-sm text-slate-700 hover:text-slate-950"
+                ? "text-sm font-semibold text-ink"
+                : "text-sm text-muted transition-colors hover:text-ink"
             }
           >
             {link.label}
