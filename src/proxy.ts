@@ -7,6 +7,7 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 // runs on it — it needs no auth and no Clerk keys.)
 const isPublicRoute = createRouteMatcher([
   "/",
+  "/offline",
   "/sign-in(.*)",
   "/sign-up(.*)",
 ]);

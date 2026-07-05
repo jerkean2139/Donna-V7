@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import {
   ClerkProvider,
@@ -8,11 +8,31 @@ import {
   UserButton,
 } from "@clerk/nextjs";
 import { MainNav } from "@/components/main-nav";
+import { BottomNav } from "@/components/bottom-nav";
+import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Donna V7 | Manumation Intelligence Layer",
   description: "The Intelligence Layer for Cognitive Objects, Cognitive Graph, governance, and better human-AI decisions.",
+  manifest: "/manifest.webmanifest",
+  applicationName: "Donna",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Donna",
+  },
+  icons: {
+    icon: [{ url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0b1220",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -36,7 +56,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                   Donna V7
                 </Link>
                 <Show when="signed-in">
-                  <MainNav />
+                  <div className="hidden items-center gap-6 sm:flex">
+                    <MainNav />
+                  </div>
                 </Show>
               </div>
               <div className="flex items-center gap-4">
@@ -56,7 +78,13 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               </div>
             </nav>
           </header>
-          <div id="main-content">{children}</div>
+          <div id="main-content" className="pb-20 sm:pb-0">
+            {children}
+          </div>
+          <Show when="signed-in">
+            <BottomNav />
+          </Show>
+          <ServiceWorkerRegister />
         </ClerkProvider>
       </body>
     </html>
