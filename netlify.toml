@@ -1,0 +1,13 @@
+# Netlify build config for the Donna V7 staging deploy. The official Next.js
+# runtime (@netlify/plugin-nextjs) is auto-detected and handles SSR, the
+# middleware in src/proxy.ts, and API routes — no plugin needs listing here.
+# Railway remains the primary/production target (see railway.json); this is
+# for a quick, clickable staging link.
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+  # Next.js telemetry off in CI/build.
+  NEXT_TELEMETRY_DISABLED = "1"

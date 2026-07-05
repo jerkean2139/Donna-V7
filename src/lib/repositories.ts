@@ -69,15 +69,35 @@ interface Repositories {
 // misconfigured DATABASE_URL would look like a working deploy while quietly
 // discarding every write on restart. Fail loud instead (AUDIT.md open item).
 //
+// ALLOW_IN_MEMORY=true is an explicit opt-in for ephemeral demo/staging
+// deploys that intentionally run with no database (data resets on restart).
+// It must be set deliberately -- the default still fails loud -- and it never
+// overrides a configured DATABASE_URL.
+//
 // NEXT_PHASE === "phase-production-build" excludes `next build`'s page-data
 // collection step, which imports every route module (this one included)
 // under NODE_ENV=production before the real runtime env is available. This
 // guard must only fire when the server actually starts serving requests.
 const isNextProductionBuild = process.env.NEXT_PHASE === "phase-production-build";
+const allowInMemory = process.env.ALLOW_IN_MEMORY === "true";
 
-if (process.env.NODE_ENV === "production" && !isNextProductionBuild && !process.env.DATABASE_URL) {
+if (
+  process.env.NODE_ENV === "production" &&
+  !isNextProductionBuild &&
+  !process.env.DATABASE_URL &&
+  !allowInMemory
+) {
   throw new Error(
-    "DATABASE_URL is required in production. Refusing to start on the in-memory fallback.",
+    "DATABASE_URL is required in production. Refusing to start on the in-memory fallback. " +
+      "For an intentional ephemeral demo/staging deploy, set ALLOW_IN_MEMORY=true.",
+  );
+}
+
+if (process.env.NODE_ENV === "production" && !process.env.DATABASE_URL && allowInMemory) {
+  // Loud, but non-fatal: make it obvious in logs that writes are ephemeral.
+  console.warn(
+    "[repositories] ALLOW_IN_MEMORY=true and no DATABASE_URL: running on in-memory repositories. " +
+      "All data resets on restart. Do not use for real workloads.",
   );
 }
 
