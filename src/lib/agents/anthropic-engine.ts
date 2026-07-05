@@ -3,10 +3,10 @@ import { logger } from "../logger";
 import type { AiConfig } from "../ai/config";
 import { selectReasoningModel } from "../ai/config";
 import { DomainError } from "../errors";
+import type { CredentialRepository } from "../integrations/credentials/repository";
 import { AGENT_REGISTRY } from "./registry";
 import { loadSkill } from "./skill-loader";
-import { ACT_TOOLS } from "./tools/act-tools";
-import { READ_TOOLS } from "./tools/read-tools";
+import { ACT_TOOLS, READ_TOOLS } from "./tools/registry";
 import type {
   AgentEngine,
   AgentRunInput,
@@ -84,7 +84,10 @@ const TOOL_SCHEMAS: Record<string, { description: string; input_schema: Anthropi
 export class AnthropicAgentEngine implements AgentEngine {
   private readonly client: Anthropic;
 
-  constructor(private readonly config: AiConfig) {
+  constructor(
+    private readonly config: AiConfig,
+    private readonly credentialRepository: CredentialRepository,
+  ) {
     if (!config.apiKey) {
       throw new DomainError("ANTHROPIC_API_KEY is required to construct AnthropicAgentEngine.");
     }
@@ -166,7 +169,10 @@ export class AnthropicAgentEngine implements AgentEngine {
 
         if (definition.kind === "read") {
           const args = block.input as Record<string, unknown>;
-          const resultText = await READ_TOOLS[block.name]!.execute(args);
+          const resultText = await READ_TOOLS[block.name]!.execute(args, {
+            tenantId: input.tenantId,
+            credentialRepository: this.credentialRepository,
+          });
           toolCalls.push({ toolName: block.name, kind: "read", args, resultSummary: resultText });
           toolResults.push({ type: "tool_result", tool_use_id: block.id, content: resultText });
           continue;

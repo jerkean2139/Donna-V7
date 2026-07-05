@@ -1,4 +1,5 @@
 import type { RiskLevel } from "../cognitive-object/types";
+import type { CredentialRepository } from "../integrations/credentials/repository";
 
 // Read tools inform reasoning and change nothing; the agent engine executes
 // them inline. Act tools have side effects -- calling one never executes it
@@ -16,6 +17,15 @@ export interface ToolDefinition {
   // because they're never proposed as an action.
   riskLevel?: RiskLevel;
   reversible?: boolean;
+}
+
+// Passed to every read tool's execute() call, even tools that ignore it
+// (web_search, web_fetch). Tools that need tenant-scoped state -- GHL reads
+// needing that tenant's API key -- get it uniformly instead of each tool
+// inventing its own way to receive context.
+export interface ToolExecutionContext {
+  tenantId: string;
+  credentialRepository: CredentialRepository;
 }
 
 export interface AgentDefinition {

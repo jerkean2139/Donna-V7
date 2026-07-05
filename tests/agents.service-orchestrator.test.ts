@@ -1,5 +1,6 @@
 import { InMemoryCognitiveGraphRepository } from "../src/lib/cognitive-graph/repository";
 import { InMemoryCognitiveObjectRepository } from "../src/lib/cognitive-object/repository";
+import { InMemoryCredentialRepository } from "../src/lib/integrations/credentials/repository";
 import { InMemoryAgentRunRepository } from "../src/lib/agents/agent-run/repository";
 import { InMemoryProposedActionRepository } from "../src/lib/agents/proposed-action/repository";
 import { MAX_DELEGATION_DEPTH, startAgentTask, type AgentServiceDeps } from "../src/lib/agents/service";
@@ -23,6 +24,7 @@ function emptyOutput(): AgentRunOutput {
 async function setupDeps(engine: AgentEngine): Promise<{ deps: AgentServiceDeps; objectId: string; tenantId: string }> {
   const objectRepository = new InMemoryCognitiveObjectRepository();
   const graphRepository = new InMemoryCognitiveGraphRepository();
+  const credentialRepository = new InMemoryCredentialRepository();
   const agentRunRepository = new InMemoryAgentRunRepository();
   const proposedActionRepository = new InMemoryProposedActionRepository();
   const tenantId = "tenant_a";
@@ -38,7 +40,14 @@ async function setupDeps(engine: AgentEngine): Promise<{ deps: AgentServiceDeps;
   });
 
   return {
-    deps: { objectRepository, graphRepository, agentRunRepository, proposedActionRepository, agentEngine: engine },
+    deps: {
+      objectRepository,
+      graphRepository,
+      credentialRepository,
+      agentRunRepository,
+      proposedActionRepository,
+      agentEngine: engine,
+    },
     objectId: object.id,
     tenantId,
   };

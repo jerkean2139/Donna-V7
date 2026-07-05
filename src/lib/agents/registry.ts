@@ -20,10 +20,8 @@ import type { AgentDefinition } from "./types";
 //     Marketing (campaigns), Communication (drafts email/Slack for others),
 //     Prospecting (cold outreach). Everyone else stays without it rather
 //     than getting a tool that doesn't match their actual skill content.
-//   - GHL Funnels and GHL Campaigns explicitly need `ghl_api`, which does
-//     not exist yet (external, needs per-tenant credentials -- Decision 9,
-//     deferred to PR3). They're registered with the default tool set only;
-//     their real capability lands with PR3's connectors, not before.
+//   - GHL Funnels and GHL Campaigns get ghl_read/ghl_write on top of the
+//     default set (PR3's per-tenant credential connector, Decision 9).
 //
 // "supervisor" is carried over from KOB v2's skill files as-is (Kianna,
 // Muju, Taha, Jeremy, Jaweria) rather than made tenant-configurable yet --
@@ -31,6 +29,10 @@ import type { AgentDefinition } from "./types";
 // tenant actually needs different supervisor names.
 const DEFAULT_TOOLS = ["web_search", "web_fetch", "create_followup_object"];
 const WITH_EMAIL_TOOLS = [...DEFAULT_TOOLS, "send_email"];
+// PR3: GHL Funnels and GHL Campaigns get the real connector -- ghl_read
+// executes inline, ghl_write always produces a Proposed Action (high risk,
+// irreversible per the tools registry, so it never auto-executes).
+const WITH_GHL_TOOLS = [...DEFAULT_TOOLS, "ghl_read", "ghl_write"];
 
 export const AGENT_REGISTRY: Record<string, AgentDefinition> = {
   "Deep Research": {
@@ -176,8 +178,7 @@ export const AGENT_REGISTRY: Record<string, AgentDefinition> = {
     supervisor: "Jaweria",
     skillPath: "sales/ghl-funnels.md",
     routingKeywords: ["funnel", "ghl", "gohighlevel", "lead capture"],
-    // Real capability is the GHL API, not built yet (PR3). Default tools only.
-    tools: DEFAULT_TOOLS,
+    tools: WITH_GHL_TOOLS,
   },
 
   // ── Marketing (Kianna) ──
@@ -219,8 +220,7 @@ export const AGENT_REGISTRY: Record<string, AgentDefinition> = {
     supervisor: "Kianna",
     skillPath: "marketing/ghl-campaigns.md",
     routingKeywords: ["ghl campaign", "marketing automation", "sms campaign"],
-    // Real capability is the GHL API, not built yet (PR3). Default tools only.
-    tools: DEFAULT_TOOLS,
+    tools: WITH_GHL_TOOLS,
   },
 
   // ── Accounting (Muju) ──

@@ -1,5 +1,6 @@
 import { InMemoryCognitiveGraphRepository } from "../src/lib/cognitive-graph/repository";
 import { InMemoryCognitiveObjectRepository } from "../src/lib/cognitive-object/repository";
+import { InMemoryCredentialRepository } from "../src/lib/integrations/credentials/repository";
 import { InMemoryAgentRunRepository } from "../src/lib/agents/agent-run/repository";
 import { InMemoryProposedActionRepository } from "../src/lib/agents/proposed-action/repository";
 import {
@@ -12,6 +13,7 @@ import type { ProposedActionDraft } from "../src/lib/agents/types";
 async function setup() {
   const objectRepository = new InMemoryCognitiveObjectRepository();
   const graphRepository = new InMemoryCognitiveGraphRepository();
+  const credentialRepository = new InMemoryCredentialRepository();
   const agentRunRepository = new InMemoryAgentRunRepository();
   const proposedActionRepository = new InMemoryProposedActionRepository();
 
@@ -33,7 +35,15 @@ async function setup() {
     status: "completed",
   });
 
-  return { objectRepository, graphRepository, agentRunRepository, proposedActionRepository, object, run };
+  return {
+    objectRepository,
+    graphRepository,
+    credentialRepository,
+    agentRunRepository,
+    proposedActionRepository,
+    object,
+    run,
+  };
 }
 
 const lowRiskReversibleDraft: ProposedActionDraft = {
@@ -66,7 +76,7 @@ describe("createProposedActionFromDraft", () => {
         objectRiskLevel: "low",
         confidenceScore: 98,
       },
-      { objectRepository: ctx.objectRepository, graphRepository: ctx.graphRepository },
+      { objectRepository: ctx.objectRepository, graphRepository: ctx.graphRepository, credentialRepository: ctx.credentialRepository },
     );
 
     expect(action.status).toBe("executed");
@@ -90,7 +100,7 @@ describe("createProposedActionFromDraft", () => {
         objectRiskLevel: "low",
         confidenceScore: 100,
       },
-      { objectRepository: ctx.objectRepository, graphRepository: ctx.graphRepository },
+      { objectRepository: ctx.objectRepository, graphRepository: ctx.graphRepository, credentialRepository: ctx.credentialRepository },
     );
 
     expect(action.status).toBe("proposed");
@@ -110,7 +120,7 @@ describe("createProposedActionFromDraft", () => {
         objectRiskLevel: "low",
         confidenceScore: 40,
       },
-      { objectRepository: ctx.objectRepository, graphRepository: ctx.graphRepository },
+      { objectRepository: ctx.objectRepository, graphRepository: ctx.graphRepository, credentialRepository: ctx.credentialRepository },
     );
 
     expect(action.status).toBe("proposed");
@@ -131,7 +141,7 @@ describe("approveAndExecuteProposedAction", () => {
         objectRiskLevel: "low",
         confidenceScore: 100,
       },
-      { objectRepository: ctx.objectRepository, graphRepository: ctx.graphRepository },
+      { objectRepository: ctx.objectRepository, graphRepository: ctx.graphRepository, credentialRepository: ctx.credentialRepository },
     );
     expect(action.status).toBe("proposed");
 
@@ -139,7 +149,7 @@ describe("approveAndExecuteProposedAction", () => {
       ctx.proposedActionRepository,
       ctx.agentRunRepository,
       { id: action.id, tenantId: "tenant_a", userId: "approver_1" },
-      { objectRepository: ctx.objectRepository, graphRepository: ctx.graphRepository },
+      { objectRepository: ctx.objectRepository, graphRepository: ctx.graphRepository, credentialRepository: ctx.credentialRepository },
     );
 
     expect(decided.status).toBe("executed");
@@ -160,14 +170,14 @@ describe("approveAndExecuteProposedAction", () => {
         objectRiskLevel: "low",
         confidenceScore: 100,
       },
-      { objectRepository: ctx.objectRepository, graphRepository: ctx.graphRepository },
+      { objectRepository: ctx.objectRepository, graphRepository: ctx.graphRepository, credentialRepository: ctx.credentialRepository },
     );
 
     await approveAndExecuteProposedAction(
       ctx.proposedActionRepository,
       ctx.agentRunRepository,
       { id: action.id, tenantId: "tenant_a", userId: "approver_1" },
-      { objectRepository: ctx.objectRepository, graphRepository: ctx.graphRepository },
+      { objectRepository: ctx.objectRepository, graphRepository: ctx.graphRepository, credentialRepository: ctx.credentialRepository },
     );
 
     await expect(
@@ -175,7 +185,7 @@ describe("approveAndExecuteProposedAction", () => {
         ctx.proposedActionRepository,
         ctx.agentRunRepository,
         { id: action.id, tenantId: "tenant_a", userId: "approver_2" },
-        { objectRepository: ctx.objectRepository, graphRepository: ctx.graphRepository },
+        { objectRepository: ctx.objectRepository, graphRepository: ctx.graphRepository, credentialRepository: ctx.credentialRepository },
       ),
     ).rejects.toThrow(/already been/);
   });
@@ -193,7 +203,7 @@ describe("approveAndExecuteProposedAction", () => {
         objectRiskLevel: "low",
         confidenceScore: 100,
       },
-      { objectRepository: ctx.objectRepository, graphRepository: ctx.graphRepository },
+      { objectRepository: ctx.objectRepository, graphRepository: ctx.graphRepository, credentialRepository: ctx.credentialRepository },
     );
 
     await expect(
@@ -201,7 +211,7 @@ describe("approveAndExecuteProposedAction", () => {
         ctx.proposedActionRepository,
         ctx.agentRunRepository,
         { id: action.id, tenantId: "tenant_b_attacker", userId: "attacker" },
-        { objectRepository: ctx.objectRepository, graphRepository: ctx.graphRepository },
+        { objectRepository: ctx.objectRepository, graphRepository: ctx.graphRepository, credentialRepository: ctx.credentialRepository },
       ),
     ).rejects.toThrow(/not found/);
   });
@@ -221,7 +231,7 @@ describe("rejectProposedAction", () => {
         objectRiskLevel: "low",
         confidenceScore: 100,
       },
-      { objectRepository: ctx.objectRepository, graphRepository: ctx.graphRepository },
+      { objectRepository: ctx.objectRepository, graphRepository: ctx.graphRepository, credentialRepository: ctx.credentialRepository },
     );
 
     const rejected = await rejectProposedAction(ctx.proposedActionRepository, {
