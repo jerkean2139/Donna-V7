@@ -10,6 +10,7 @@ const links = [
   { href: "/decisions", label: "Decisions" },
   { href: "/integrations", label: "Integrations" },
   { href: "/settings/feedback", label: "Feedback" },
+  { href: "/settings/billing", label: "Billing" },
 ] as const;
 
 export function MainNav() {

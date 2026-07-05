@@ -6,7 +6,8 @@ import { vi } from "vitest";
 const authMock = vi.fn<() => Promise<{ userId: string | null; orgId: string | null }>>();
 
 vi.mock("@clerk/nextjs/server", () => ({
-  auth: () => authMock(),
+  // has() drives Clerk Billing plan resolution; false => free "starter" tier.
+  auth: async () => ({ ...(await authMock()), has: () => false }),
 }));
 
 vi.mock("next/navigation", () => ({

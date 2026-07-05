@@ -16,6 +16,7 @@ import {
 } from "@/lib/repositories";
 import { createCognitiveObject } from "@/lib/cognitive-object/service";
 import { startEvolutionLoopForObject } from "@/lib/evolution-loop/service";
+import { assertAiRunQuota } from "@/lib/billing/enforce";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 
 const EVOLUTION_LOOP_RATE_LIMIT = { windowMs: 60_000, maxRequests: 20 };
@@ -106,6 +107,8 @@ export async function startEvolutionLoopAction(formData: FormData): Promise<void
   // latency), so this is the first route to rate-limit per Phase 1 design's
   // security section. Per-tenant so one tenant's usage can't exhaust another's.
   checkRateLimit(`evolution_loop:${tenant.tenantId}`, EVOLUTION_LOOP_RATE_LIMIT);
+  // Plan gate (cost) sits beside the rate limit and governance (risk).
+  await assertAiRunQuota(tenant.tenantId);
 
   const startedAt = Date.now();
   const run = await startEvolutionLoopForObject(
