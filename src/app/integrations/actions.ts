@@ -3,41 +3,70 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getTenantContext } from "@/lib/auth/tenant";
+import { DomainError } from "@/lib/errors";
+import { toFieldErrors, type FormActionState } from "@/lib/forms";
 import { credentialRepository } from "@/lib/repositories";
 import { deleteCredential, hasCredential, setCredential } from "@/lib/integrations/credentials/service";
 import { integrationProviders } from "@/lib/integrations/credentials/types";
-import { logger } from "@/lib/logger";
+import { errorField, logger } from "@/lib/logger";
 
-// No page reads/writes this yet -- the UI for tenant admins to manage
-// GHL/Resend keys is a follow-up. This is the server-action layer PR3
-// promised (Decision 9): the only place a plaintext secret is ever
-// accepted from a form, encrypted immediately via setCredential.
+// This is the server-action layer PR3 promised (Decision 9): the only place
+// a plaintext secret is ever accepted from a form, encrypted immediately via
+// setCredential. The settings page at /integrations is the only caller.
 const setIntegrationCredentialFormSchema = z.object({
   provider: z.enum(integrationProviders),
   secret: z.string().min(1, "A credential value is required.").max(4000),
 });
 
-export async function setIntegrationCredentialAction(formData: FormData): Promise<void> {
+export async function setIntegrationCredentialAction(
+  _previousState: FormActionState,
+  formData: FormData,
+): Promise<FormActionState> {
   const tenant = await getTenantContext();
-  const input = setIntegrationCredentialFormSchema.parse({
+  const parsed = setIntegrationCredentialFormSchema.safeParse({
     provider: formData.get("provider"),
     secret: formData.get("secret"),
   });
 
-  await setCredential(credentialRepository, {
-    tenantId: tenant.tenantId,
-    provider: input.provider,
-    secret: input.secret,
-    userId: tenant.userId,
-  });
+  if (!parsed.success) {
+    return {
+      status: "error",
+      message: "Please fix the highlighted fields and try again.",
+      fieldErrors: toFieldErrors(parsed.error),
+    };
+  }
+
+  try {
+    await setCredential(credentialRepository, {
+      tenantId: tenant.tenantId,
+      provider: parsed.data.provider,
+      secret: parsed.data.secret,
+      userId: tenant.userId,
+    });
+  } catch (error) {
+    logger.error("integration_credential.set_failed", {
+      tenantId: tenant.tenantId,
+      userId: tenant.userId,
+      provider: parsed.data.provider,
+      error: errorField(error),
+    });
+    return {
+      status: "error",
+      message:
+        error instanceof DomainError
+          ? error.message
+          : "The credential could not be saved. Please try again.",
+    };
+  }
 
   logger.info("integration_credential.set", {
     tenantId: tenant.tenantId,
     userId: tenant.userId,
-    provider: input.provider,
+    provider: parsed.data.provider,
   });
 
   revalidatePath("/integrations");
+  return { status: "idle" };
 }
 
 const deleteIntegrationCredentialFormSchema = z.object({

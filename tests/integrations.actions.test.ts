@@ -15,6 +15,7 @@ import {
   getIntegrationCredentialStatuses,
   setIntegrationCredentialAction,
 } from "../src/app/integrations/actions";
+import { idleFormState } from "../src/lib/forms";
 
 function signIn(tenantId: string, userId = "user_1"): void {
   authMock.mockResolvedValue({ userId, orgId: tenantId });
@@ -50,7 +51,11 @@ describe("integration credential actions", () => {
     const tenantId = `org_int_${crypto.randomUUID()}`;
     signIn(tenantId);
 
-    await setIntegrationCredentialAction(formData({ provider: "ghl", secret: "ghl_key_123" }));
+    const result = await setIntegrationCredentialAction(
+      idleFormState,
+      formData({ provider: "ghl", secret: "ghl_key_123" }),
+    );
+    expect(result.status).toBe("idle");
 
     const statuses = await getIntegrationCredentialStatuses();
     expect(statuses.find((s) => s.provider === "ghl")?.configured).toBe(true);
@@ -61,7 +66,7 @@ describe("integration credential actions", () => {
     const tenantId = `org_int_${crypto.randomUUID()}`;
     signIn(tenantId);
 
-    await setIntegrationCredentialAction(formData({ provider: "resend", secret: "re_key_123" }));
+    await setIntegrationCredentialAction(idleFormState, formData({ provider: "resend", secret: "re_key_123" }));
     await deleteIntegrationCredentialAction(formData({ provider: "resend" }));
 
     const statuses = await getIntegrationCredentialStatuses();
@@ -73,22 +78,28 @@ describe("integration credential actions", () => {
     const tenantB = `org_int_${crypto.randomUUID()}`;
 
     signIn(tenantA);
-    await setIntegrationCredentialAction(formData({ provider: "ghl", secret: "a-key" }));
+    await setIntegrationCredentialAction(idleFormState, formData({ provider: "ghl", secret: "a-key" }));
 
     signIn(tenantB);
     const statuses = await getIntegrationCredentialStatuses();
     expect(statuses.find((s) => s.provider === "ghl")?.configured).toBe(false);
   });
 
-  it("rejects an unknown provider", async () => {
+  it("rejects an unknown provider with a field error instead of throwing", async () => {
     signIn(`org_int_${crypto.randomUUID()}`);
-    await expect(
-      setIntegrationCredentialAction(formData({ provider: "not-a-real-provider", secret: "x" })),
-    ).rejects.toThrow();
+    const result = await setIntegrationCredentialAction(
+      idleFormState,
+      formData({ provider: "not-a-real-provider", secret: "x" }),
+    );
+    expect(result.status).toBe("error");
   });
 
-  it("rejects an empty secret", async () => {
+  it("rejects an empty secret with a field error instead of throwing", async () => {
     signIn(`org_int_${crypto.randomUUID()}`);
-    await expect(setIntegrationCredentialAction(formData({ provider: "ghl", secret: "" }))).rejects.toThrow();
+    const result = await setIntegrationCredentialAction(
+      idleFormState,
+      formData({ provider: "ghl", secret: "" }),
+    );
+    expect(result.status).toBe("error");
   });
 });
