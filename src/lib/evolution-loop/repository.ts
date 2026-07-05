@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, gte } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { cognitiveObjectLoopRuns } from "../../db/schema";
 import type * as dbSchema from "../../db/schema";
@@ -16,6 +16,10 @@ import type {
 export interface EvolutionLoopRunRepository {
   create(input: CreateEvolutionLoopRunInput): Promise<EvolutionLoopRun>;
   listByObjectForTenant(objectId: string, tenantId: string): Promise<EvolutionLoopRun[]>;
+  // Billing meter: loop runs this tenant created since a given instant. A loop
+  // run is an AI operation, so it counts toward the same monthly AI-run cap as
+  // agent runs.
+  countForTenantSince(tenantId: string, since: Date): Promise<number>;
 }
 
 export class InMemoryEvolutionLoopRunRepository implements EvolutionLoopRunRepository {
@@ -51,6 +55,14 @@ export class InMemoryEvolutionLoopRunRepository implements EvolutionLoopRunRepos
     return Array.from(this.store.values())
       .filter((run) => run.tenantId === tenantId && run.objectId === objectId)
       .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime());
+  }
+
+  async countForTenantSince(tenantId: string, since: Date): Promise<number> {
+    let total = 0;
+    for (const run of this.store.values()) {
+      if (run.tenantId === tenantId && run.createdAt >= since) total += 1;
+    }
+    return total;
   }
 }
 
@@ -129,6 +141,19 @@ export class DrizzleEvolutionLoopRunRepository implements EvolutionLoopRunReposi
       .orderBy(desc(cognitiveObjectLoopRuns.createdAt));
 
     return records.map(toEvolutionLoopRun);
+  }
+
+  async countForTenantSince(tenantId: string, since: Date): Promise<number> {
+    const [row] = await this.db
+      .select({ total: count() })
+      .from(cognitiveObjectLoopRuns)
+      .where(
+        and(
+          eq(cognitiveObjectLoopRuns.tenantId, tenantId),
+          gte(cognitiveObjectLoopRuns.createdAt, since),
+        ),
+      );
+    return Number(row?.total ?? 0);
   }
 }
 

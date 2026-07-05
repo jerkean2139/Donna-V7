@@ -1,4 +1,4 @@
-import { and, count, desc, eq, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { agentRuns } from "../../../db/schema";
 import type * as dbSchema from "../../../db/schema";
@@ -24,6 +24,9 @@ export interface AgentRunRepository {
   listRecentForTenant(tenantId: string, limit: number): Promise<AgentRun[]>;
   // Agent roster stat cards: all-time run counts grouped by agent.
   aggregateByAgentForTenant(tenantId: string): Promise<AgentRunAggregate[]>;
+  // Billing meter: how many runs this tenant has created since a given
+  // instant (the start of the current month), for the plan run-cap gate.
+  countForTenantSince(tenantId: string, since: Date): Promise<number>;
 }
 
 export class InMemoryAgentRunRepository implements AgentRunRepository {
@@ -80,6 +83,14 @@ export class InMemoryAgentRunRepository implements AgentRunRepository {
       byAgent.set(run.agentName, agg);
     }
     return Array.from(byAgent.values());
+  }
+
+  async countForTenantSince(tenantId: string, since: Date): Promise<number> {
+    let total = 0;
+    for (const run of this.store.values()) {
+      if (run.tenantId === tenantId && run.createdAt >= since) total += 1;
+    }
+    return total;
   }
 }
 
@@ -171,5 +182,13 @@ export class DrizzleAgentRunRepository implements AgentRunRepository {
       completedRuns: Number(row.completedRuns),
       failedRuns: Number(row.failedRuns),
     }));
+  }
+
+  async countForTenantSince(tenantId: string, since: Date): Promise<number> {
+    const [row] = await this.db
+      .select({ total: count() })
+      .from(agentRuns)
+      .where(and(eq(agentRuns.tenantId, tenantId), gte(agentRuns.createdAt, since)));
+    return Number(row?.total ?? 0);
   }
 }

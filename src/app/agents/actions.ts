@@ -18,6 +18,7 @@ import {
   rejectProposedAction,
 } from "@/lib/agents/proposed-action/service";
 import { startAgentTask } from "@/lib/agents/service";
+import { assertAiRunQuota } from "@/lib/billing/enforce";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 
 // Same rate-limit discipline as the Evolution Loop action: an agent run is a
@@ -40,6 +41,8 @@ export async function startAgentTaskAction(formData: FormData): Promise<void> {
   });
 
   checkRateLimit(`agent_task:${tenant.tenantId}`, AGENT_TASK_RATE_LIMIT);
+  // Plan gate (cost) sits beside the rate limit and governance (risk).
+  await assertAiRunQuota(tenant.tenantId);
 
   const startedAt = Date.now();
   const result = await startAgentTask(

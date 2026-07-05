@@ -16,6 +16,7 @@ import {
 } from "@/lib/repositories";
 import { createCognitiveObject } from "@/lib/cognitive-object/service";
 import { startEvolutionLoopForObject } from "@/lib/evolution-loop/service";
+import { assertAiRunQuota } from "@/lib/billing/enforce";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 
 // Ideas Lab is a low-friction front door to the create -> reason -> govern
@@ -59,6 +60,11 @@ export async function captureIdeaAction(
   checkRateLimit(`ideas_lab:${tenant.tenantId}`, IDEAS_LAB_RATE_LIMIT);
 
   const analyze = parsed.data.analyze === "true";
+  // Only "Capture & Analyze" triggers a paid AI run (the Evolution Loop), so
+  // only that path is gated by the plan's AI-run quota. Capture-only is free.
+  if (analyze) {
+    await assertAiRunQuota(tenant.tenantId);
+  }
   let objectId: string;
   const startedAt = Date.now();
 
