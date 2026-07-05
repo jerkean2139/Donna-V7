@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getTenantContext } from "@/lib/auth/tenant";
 import { toFieldErrors, type FormActionState } from "@/lib/forms";
 import { errorField, logger } from "@/lib/logger";
-import { cognitiveObjectRepository } from "@/lib/repositories";
+import { cognitiveObjectRepository, embeddingProvider } from "@/lib/repositories";
 import { createCognitiveObject } from "@/lib/cognitive-object/service";
 import { createDecisionFormSchema } from "@/lib/decision/input";
 import { DECISION_OBJECT_TYPE } from "@/lib/decision/service";
@@ -36,17 +36,21 @@ export async function createDecisionAction(
   const startedAt = Date.now();
 
   try {
-    const result = await createCognitiveObject(cognitiveObjectRepository, {
-      tenantId: tenant.tenantId,
-      createdByUserId: tenant.userId,
-      objectType: DECISION_OBJECT_TYPE,
-      title: parsed.data.title,
-      objective: parsed.data.objective,
-      summary: parsed.data.summary,
-      source: "manual",
-      riskLevel: parsed.data.riskLevel,
-      tags: parsed.data.tags,
-    });
+    const result = await createCognitiveObject(
+      cognitiveObjectRepository,
+      {
+        tenantId: tenant.tenantId,
+        createdByUserId: tenant.userId,
+        objectType: DECISION_OBJECT_TYPE,
+        title: parsed.data.title,
+        objective: parsed.data.objective,
+        summary: parsed.data.summary,
+        source: "manual",
+        riskLevel: parsed.data.riskLevel,
+        tags: parsed.data.tags,
+      },
+      embeddingProvider,
+    );
     decisionId = result.object.id;
   } catch (error) {
     logger.error("decision.create.failed", {

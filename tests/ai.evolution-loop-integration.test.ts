@@ -296,4 +296,137 @@ describe("GraphContextRetriever", () => {
 
     expect(context).toEqual([]);
   });
+
+  it("fills remaining slots with semantic neighbors when graph edges don't reach topK", async () => {
+    const { objectRepository, contextRetriever } = await setup();
+
+    const root = await objectRepository.create({
+      tenantId: "tenant_a",
+      createdByUserId: "user_1",
+      objectType: "decision",
+      title: "Root decision",
+      source: "manual",
+      riskLevel: "low",
+      tags: [],
+      embedding: [1, 0, 0],
+    });
+    const semanticMatch = await objectRepository.create({
+      tenantId: "tenant_a",
+      createdByUserId: "user_1",
+      objectType: "lesson",
+      title: "No graph edge, but semantically close",
+      source: "manual",
+      riskLevel: "low",
+      tags: [],
+      embedding: [0.95, 0.05, 0],
+    });
+
+    const context = await contextRetriever.retrieveContextForObject({
+      objectId: root.id,
+      tenantId: "tenant_a",
+    });
+
+    expect(context).toHaveLength(1);
+    expect(context[0]?.objectId).toBe(semanticMatch.id);
+    expect(context[0]?.retrievalMethod).toBe("semantic");
+    expect(context[0]?.strength).not.toBeNull();
+  });
+
+  it("does not duplicate an object already surfaced by a graph edge", async () => {
+    const { objectRepository, graphRepository, contextRetriever } = await setup();
+
+    const root = await objectRepository.create({
+      tenantId: "tenant_a",
+      createdByUserId: "user_1",
+      objectType: "decision",
+      title: "Root decision",
+      source: "manual",
+      riskLevel: "low",
+      tags: [],
+      embedding: [1, 0, 0],
+    });
+    const graphAndSemanticNeighbor = await objectRepository.create({
+      tenantId: "tenant_a",
+      createdByUserId: "user_1",
+      objectType: "lesson",
+      title: "Both a graph neighbor and a semantic match",
+      source: "manual",
+      riskLevel: "low",
+      tags: [],
+      embedding: [0.95, 0.05, 0],
+    });
+
+    await graphRepository.createEdge({
+      tenantId: "tenant_a",
+      fromObjectId: root.id,
+      toObjectId: graphAndSemanticNeighbor.id,
+      relationshipType: "supports",
+      strength: 95,
+      source: "human",
+      createdByUserId: "user_1",
+    });
+
+    const context = await contextRetriever.retrieveContextForObject({
+      objectId: root.id,
+      tenantId: "tenant_a",
+    });
+
+    expect(context).toHaveLength(1);
+    expect(context[0]?.retrievalMethod).toBe("graph");
+  });
+
+  it("caps the merged graph + semantic result at topK", async () => {
+    const { objectRepository, graphRepository, contextRetriever } = await setup();
+
+    const root = await objectRepository.create({
+      tenantId: "tenant_a",
+      createdByUserId: "user_1",
+      objectType: "decision",
+      title: "Root decision",
+      source: "manual",
+      riskLevel: "low",
+      tags: [],
+      embedding: [1, 0, 0],
+    });
+
+    const graphNeighbor = await objectRepository.create({
+      tenantId: "tenant_a",
+      createdByUserId: "user_1",
+      objectType: "lesson",
+      title: "Graph neighbor",
+      source: "manual",
+      riskLevel: "low",
+      tags: [],
+    });
+    await graphRepository.createEdge({
+      tenantId: "tenant_a",
+      fromObjectId: root.id,
+      toObjectId: graphNeighbor.id,
+      relationshipType: "supports",
+      strength: 95,
+      source: "human",
+      createdByUserId: "user_1",
+    });
+
+    for (let i = 0; i < 3; i += 1) {
+      await objectRepository.create({
+        tenantId: "tenant_a",
+        createdByUserId: "user_1",
+        objectType: "lesson",
+        title: `Semantic neighbor ${i}`,
+        source: "manual",
+        riskLevel: "low",
+        tags: [],
+        embedding: [0.9, 0.1, 0],
+      });
+    }
+
+    const context = await contextRetriever.retrieveContextForObject({
+      objectId: root.id,
+      tenantId: "tenant_a",
+      topK: 2,
+    });
+
+    expect(context).toHaveLength(2);
+  });
 });
