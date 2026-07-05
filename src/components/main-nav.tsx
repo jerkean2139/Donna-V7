@@ -9,6 +9,7 @@ const links = [
   { href: "/cognitive-objects", label: "Cognitive Objects" },
   { href: "/decisions", label: "Decisions" },
   { href: "/integrations", label: "Integrations" },
+  { href: "/settings/feedback", label: "Feedback" },
 ] as const;
 
 export function MainNav() {
