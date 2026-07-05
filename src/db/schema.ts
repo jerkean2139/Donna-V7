@@ -289,3 +289,27 @@ export const proposedActions = pgTable(
     index("proposed_actions_tenant_status_idx").on(table.tenantId, table.status),
   ],
 );
+
+// ── Phase 2 PR3: per-tenant integration credentials ──
+
+export const integrationProviderEnum = pgEnum("integration_provider", ["ghl", "resend"]);
+
+export const tenantIntegrationCredentials = pgTable(
+  "tenant_integration_credentials",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: varchar("tenant_id", { length: 191 }).notNull(),
+    provider: integrationProviderEnum("provider").notNull(),
+    // AES-256-GCM ciphertext (base64 of iv || authTag || ciphertext), never
+    // plaintext -- see src/lib/security/encryption.ts. The application layer
+    // decrypts on read; nothing here is queryable or indexable as plaintext.
+    encryptedValue: text("encrypted_value").notNull(),
+    createdByUserId: varchar("created_by_user_id", { length: 191 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    // One credential per tenant per provider; setting a new one replaces it.
+    uniqueIndex("tenant_integration_credentials_tenant_provider_idx").on(table.tenantId, table.provider),
+  ],
+);

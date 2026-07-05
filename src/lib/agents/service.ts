@@ -1,6 +1,7 @@
 import type { CognitiveGraphRepository } from "../cognitive-graph/repository";
 import type { CognitiveObjectRepository } from "../cognitive-object/repository";
 import { DomainError } from "../errors";
+import type { CredentialRepository } from "../integrations/credentials/repository";
 import { errorField, logger } from "../logger";
 import type { AgentRun } from "./agent-run/types";
 import type { AgentRunRepository } from "./agent-run/repository";
@@ -19,6 +20,7 @@ export const MAX_DELEGATION_DEPTH = 2;
 export interface AgentServiceDeps {
   objectRepository: CognitiveObjectRepository;
   graphRepository: CognitiveGraphRepository;
+  credentialRepository: CredentialRepository;
   agentRunRepository: AgentRunRepository;
   proposedActionRepository: ProposedActionRepository;
   agentEngine: AgentEngine;
@@ -114,7 +116,11 @@ export async function startAgentTask(
         objectRiskLevel: object.riskLevel,
         confidenceScore: object.confidenceScore ?? null,
       },
-      { objectRepository: deps.objectRepository, graphRepository: deps.graphRepository },
+      {
+        objectRepository: deps.objectRepository,
+        graphRepository: deps.graphRepository,
+        credentialRepository: deps.credentialRepository,
+      },
     );
     proposedActions.push(action);
   }

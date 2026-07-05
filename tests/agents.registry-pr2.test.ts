@@ -31,9 +31,21 @@ describe("AGENT_REGISTRY (PR2 roster)", () => {
     }
   });
 
-  it("GHL Funnels and GHL Campaigns are registered with only the default tools, pending PR3's connector", () => {
-    expect(AGENT_REGISTRY["GHL Funnels"]?.tools).toEqual(["web_search", "web_fetch", "create_followup_object"]);
-    expect(AGENT_REGISTRY["GHL Campaigns"]?.tools).toEqual(["web_search", "web_fetch", "create_followup_object"]);
+  it("GHL Funnels and GHL Campaigns are registered with the real GHL connector (PR3)", () => {
+    expect(AGENT_REGISTRY["GHL Funnels"]?.tools).toEqual([
+      "web_search",
+      "web_fetch",
+      "create_followup_object",
+      "ghl_read",
+      "ghl_write",
+    ]);
+    expect(AGENT_REGISTRY["GHL Campaigns"]?.tools).toEqual([
+      "web_search",
+      "web_fetch",
+      "create_followup_object",
+      "ghl_read",
+      "ghl_write",
+    ]);
   });
 
   it("every agent has a non-empty routing keyword list", () => {

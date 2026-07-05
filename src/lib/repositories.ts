@@ -32,7 +32,12 @@ import {
   InMemoryProposedActionRepository,
   type ProposedActionRepository,
 } from "./agents/proposed-action/repository";
-import { agentEngine } from "./agents/engine";
+import { createAgentEngine } from "./agents/engine";
+import {
+  DrizzleCredentialRepository,
+  InMemoryCredentialRepository,
+  type CredentialRepository,
+} from "./integrations/credentials/repository";
 
 // Central persistence wiring. When DATABASE_URL is set we use the Postgres /
 // Drizzle adapters (shared single client); otherwise everything falls back to
@@ -45,6 +50,7 @@ interface Repositories {
   outcomeRepository: OutcomeRepository;
   agentRunRepository: AgentRunRepository;
   proposedActionRepository: ProposedActionRepository;
+  credentialRepository: CredentialRepository;
 }
 
 // In production, silently falling back to in-memory repositories on a
@@ -76,6 +82,7 @@ function createRepositories(db: AppDatabase | null): Repositories {
       outcomeRepository: new DrizzleOutcomeRepository(db),
       agentRunRepository: new DrizzleAgentRunRepository(db),
       proposedActionRepository: new DrizzleProposedActionRepository(db),
+      credentialRepository: new DrizzleCredentialRepository(db),
     };
   }
 
@@ -86,6 +93,7 @@ function createRepositories(db: AppDatabase | null): Repositories {
     outcomeRepository: new InMemoryOutcomeRepository(),
     agentRunRepository: new InMemoryAgentRunRepository(),
     proposedActionRepository: new InMemoryProposedActionRepository(),
+    credentialRepository: new InMemoryCredentialRepository(),
   };
 }
 
@@ -135,4 +143,8 @@ export { reasoningEngine };
 // real-vs-fake the same way reasoningEngine does (see agents/engine.ts).
 export const agentRunRepository = repositories.agentRunRepository;
 export const proposedActionRepository = repositories.proposedActionRepository;
-export { agentEngine };
+
+// Phase 2 PR3: per-tenant encrypted integration credentials (GHL, Resend).
+export const credentialRepository = repositories.credentialRepository;
+
+export const agentEngine = createAgentEngine(credentialRepository);

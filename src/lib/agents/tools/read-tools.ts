@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { ToolExecutionContext } from "../types";
 import { assertHostnameIsPublic, SsrfBlockedError } from "./ssrf";
 
 export interface ReadToolSpec {
@@ -6,7 +7,10 @@ export interface ReadToolSpec {
   description: string;
   kind: "read";
   inputSchema: z.ZodType<Record<string, unknown>>;
-  execute(args: Record<string, unknown>): Promise<string>;
+  // context is unused by tools with no tenant-scoped state (web_search,
+  // web_fetch) and required by ones that have it (ghl_read) -- see
+  // ToolExecutionContext's doc comment in agents/types.ts.
+  execute(args: Record<string, unknown>, context: ToolExecutionContext): Promise<string>;
 }
 
 const webSearchInputSchema = z.object({ query: z.string().min(1).max(300) });

@@ -3,27 +3,46 @@ import { defaultTenantGovernancePolicy, type TenantGovernancePolicy } from "../.
 import type { CognitiveObjectRepository } from "../../cognitive-object/repository";
 import type { RiskLevel } from "../../cognitive-object/types";
 import { DomainError } from "../../errors";
+import type { CredentialRepository } from "../../integrations/credentials/repository";
+import { hasCredential } from "../../integrations/credentials/service";
 import { errorField, logger } from "../../logger";
 import type { AgentRunRepository } from "../agent-run/repository";
 import type { ProposedActionDraft } from "../types";
-import { CreateFollowupObjectExecutor, FakeSendEmailExecutor, type ActionExecutor } from "./executors";
+import {
+  CreateFollowupObjectExecutor,
+  FakeSendEmailExecutor,
+  GhlWriteExecutor,
+  ResendSendEmailExecutor,
+  type ActionExecutor,
+} from "./executors";
 import { evaluateProposedActionGovernance } from "./governance";
 import type { ProposedActionRepository } from "./repository";
 import type { ProposedAction } from "./types";
 
-function getActionExecutor(
+export interface ExecutionDeps {
+  objectRepository: CognitiveObjectRepository;
+  graphRepository: CognitiveGraphRepository;
+  credentialRepository: CredentialRepository;
+}
+
+async function getActionExecutor(
   toolName: string,
-  deps: {
-    objectRepository: CognitiveObjectRepository;
-    graphRepository: CognitiveGraphRepository;
-    agentName: string;
-  },
-): ActionExecutor | undefined {
+  tenantId: string,
+  deps: ExecutionDeps & { agentName: string },
+): Promise<ActionExecutor | undefined> {
   switch (toolName) {
     case "create_followup_object":
       return new CreateFollowupObjectExecutor(deps.objectRepository, deps.graphRepository, deps.agentName);
     case "send_email":
-      return new FakeSendEmailExecutor();
+      // Real connector once the tenant has configured Resend; otherwise the
+      // fake keeps the propose -> approve -> execute flow fully testable.
+      return (await hasCredential(deps.credentialRepository, tenantId, "resend"))
+        ? new ResendSendEmailExecutor(deps.credentialRepository)
+        : new FakeSendEmailExecutor();
+    case "ghl_write":
+      // No fake fallback needed: executeGhlWrite already returns a clean
+      // "not configured" failure when the tenant has no GHL credential.
+      return new GhlWriteExecutor(deps.credentialRepository);
     default:
       return undefined;
   }
@@ -33,10 +52,10 @@ async function runExecutor(
   action: ProposedAction,
   repository: ProposedActionRepository,
   agentName: string,
-  deps: { objectRepository: CognitiveObjectRepository; graphRepository: CognitiveGraphRepository },
+  deps: ExecutionDeps,
   decidedByUserId: string | null,
 ): Promise<ProposedAction> {
-  const executor = getActionExecutor(action.toolName, { ...deps, agentName });
+  const executor = await getActionExecutor(action.toolName, action.tenantId, { ...deps, agentName });
   if (!executor) {
     return repository.updateStatus({
       id: action.id,
@@ -90,7 +109,7 @@ export async function createProposedActionFromDraft(
   repository: ProposedActionRepository,
   draft: ProposedActionDraft,
   context: CreateProposedActionContext,
-  deps: { objectRepository: CognitiveObjectRepository; graphRepository: CognitiveGraphRepository },
+  deps: ExecutionDeps,
   policy: TenantGovernancePolicy = defaultTenantGovernancePolicy,
 ): Promise<ProposedAction> {
   const governance = evaluateProposedActionGovernance(
@@ -138,7 +157,7 @@ export async function approveAndExecuteProposedAction(
   repository: ProposedActionRepository,
   agentRunRepository: AgentRunRepository,
   input: DecideProposedActionInput,
-  deps: { objectRepository: CognitiveObjectRepository; graphRepository: CognitiveGraphRepository },
+  deps: ExecutionDeps,
 ): Promise<ProposedAction> {
   const action = await repository.findByIdForTenant(input.id, input.tenantId);
   if (!action) {

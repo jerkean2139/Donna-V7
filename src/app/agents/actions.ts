@@ -10,6 +10,7 @@ import {
   agentRunRepository,
   cognitiveGraphRepository,
   cognitiveObjectRepository,
+  credentialRepository,
   proposedActionRepository,
 } from "@/lib/repositories";
 import {
@@ -45,6 +46,7 @@ export async function startAgentTaskAction(formData: FormData): Promise<void> {
     {
       objectRepository: cognitiveObjectRepository,
       graphRepository: cognitiveGraphRepository,
+      credentialRepository,
       agentRunRepository,
       proposedActionRepository,
       agentEngine,
@@ -89,7 +91,11 @@ export async function approveProposedActionAction(formData: FormData): Promise<v
       proposedActionRepository,
       agentRunRepository,
       { id: input.proposedActionId, tenantId: tenant.tenantId, userId: tenant.userId },
-      { objectRepository: cognitiveObjectRepository, graphRepository: cognitiveGraphRepository },
+      {
+        objectRepository: cognitiveObjectRepository,
+        graphRepository: cognitiveGraphRepository,
+        credentialRepository,
+      },
     );
     logger.info("proposed_action.approved", {
       tenantId: tenant.tenantId,
