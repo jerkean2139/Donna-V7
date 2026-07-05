@@ -12,12 +12,19 @@ export interface GovernanceEvaluation {
   allowedToAutoExecute: boolean;
 }
 
-const riskRank: Record<RiskLevel, number> = {
+// Exported so other governance evaluators (e.g. proposed-action governance
+// in src/lib/agents/) rank risk consistently with this one, instead of each
+// defining its own ordering that could silently drift apart.
+export const riskRank: Record<RiskLevel, number> = {
   low: 1,
   medium: 2,
   high: 3,
   critical: 4,
 };
+
+export function maxRiskLevel(a: RiskLevel, b: RiskLevel): RiskLevel {
+  return riskRank[a] >= riskRank[b] ? a : b;
+}
 
 const externallySensitiveTypes = new Set<CognitiveObject["objectType"]>([
   "proposal",

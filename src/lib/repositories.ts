@@ -22,6 +22,17 @@ import {
 } from "./outcome/repository";
 import { GraphContextRetriever, type ContextRetriever } from "./ai/context-retriever";
 import { reasoningEngine } from "./ai/engine";
+import {
+  DrizzleAgentRunRepository,
+  InMemoryAgentRunRepository,
+  type AgentRunRepository,
+} from "./agents/agent-run/repository";
+import {
+  DrizzleProposedActionRepository,
+  InMemoryProposedActionRepository,
+  type ProposedActionRepository,
+} from "./agents/proposed-action/repository";
+import { agentEngine } from "./agents/engine";
 
 // Central persistence wiring. When DATABASE_URL is set we use the Postgres /
 // Drizzle adapters (shared single client); otherwise everything falls back to
@@ -32,6 +43,8 @@ interface Repositories {
   cognitiveGraphRepository: CognitiveGraphRepository;
   evolutionLoopRunRepository: EvolutionLoopRunRepository;
   outcomeRepository: OutcomeRepository;
+  agentRunRepository: AgentRunRepository;
+  proposedActionRepository: ProposedActionRepository;
 }
 
 // In production, silently falling back to in-memory repositories on a
@@ -61,6 +74,8 @@ function createRepositories(db: AppDatabase | null): Repositories {
       cognitiveGraphRepository: new DrizzleCognitiveGraphRepository(db),
       evolutionLoopRunRepository: new DrizzleEvolutionLoopRunRepository(db),
       outcomeRepository: new DrizzleOutcomeRepository(db),
+      agentRunRepository: new DrizzleAgentRunRepository(db),
+      proposedActionRepository: new DrizzleProposedActionRepository(db),
     };
   }
 
@@ -69,6 +84,8 @@ function createRepositories(db: AppDatabase | null): Repositories {
     cognitiveGraphRepository: new InMemoryCognitiveGraphRepository(),
     evolutionLoopRunRepository: new InMemoryEvolutionLoopRunRepository(),
     outcomeRepository: new InMemoryOutcomeRepository(),
+    agentRunRepository: new InMemoryAgentRunRepository(),
+    proposedActionRepository: new InMemoryProposedActionRepository(),
   };
 }
 
@@ -113,3 +130,9 @@ export const contextRetriever: ContextRetriever = new GraphContextRetriever(
   cognitiveObjectRepository,
 );
 export { reasoningEngine };
+
+// Phase 2: agent runs + governed Proposed Actions. agentEngine picks
+// real-vs-fake the same way reasoningEngine does (see agents/engine.ts).
+export const agentRunRepository = repositories.agentRunRepository;
+export const proposedActionRepository = repositories.proposedActionRepository;
+export { agentEngine };
