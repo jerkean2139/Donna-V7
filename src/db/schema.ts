@@ -327,3 +327,31 @@ export const tenantIntegrationCredentials = pgTable(
     uniqueIndex("tenant_integration_credentials_tenant_provider_idx").on(table.tenantId, table.provider),
   ],
 );
+
+// ── Phase 3: embeddable feedback widget keys ──
+
+export const feedbackWidgetKeys = pgTable(
+  "feedback_widget_keys",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: varchar("tenant_id", { length: 191 }).notNull(),
+    // Public-by-design: this ships inside a <script> tag on the tenant's site,
+    // so it is NOT a secret. It only authorizes "create a low-trust feedback
+    // object for this tenant" and nothing else. Distinct from the encrypted
+    // integration credentials above, which are secret.
+    publicKey: varchar("public_key", { length: 64 }).notNull(),
+    label: varchar("label", { length: 120 }).notNull(),
+    // Origin allowlist (defense-in-depth on top of the key). Empty = allow any
+    // origin; the key alone gates. Enforced by the ingest route's CORS check.
+    allowedOrigins: jsonb("allowed_origins").$type<string[]>().notNull().default([]),
+    createdByUserId: varchar("created_by_user_id", { length: 191 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    // Revocation is a soft delete: a revoked key stops resolving but stays for
+    // the audit trail.
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex("feedback_widget_keys_public_key_idx").on(table.publicKey),
+    index("feedback_widget_keys_tenant_idx").on(table.tenantId),
+  ],
+);

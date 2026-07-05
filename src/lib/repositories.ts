@@ -44,6 +44,11 @@ import {
   InMemoryCredentialRepository,
   type CredentialRepository,
 } from "./integrations/credentials/repository";
+import {
+  DrizzleFeedbackWidgetKeyRepository,
+  InMemoryFeedbackWidgetKeyRepository,
+  type FeedbackWidgetKeyRepository,
+} from "./feedback/repository";
 
 // Central persistence wiring. When DATABASE_URL is set we use the Postgres /
 // Drizzle adapters (shared single client); otherwise everything falls back to
@@ -57,6 +62,7 @@ interface Repositories {
   agentRunRepository: AgentRunRepository;
   proposedActionRepository: ProposedActionRepository;
   credentialRepository: CredentialRepository;
+  feedbackWidgetKeyRepository: FeedbackWidgetKeyRepository;
 }
 
 // In production, silently falling back to in-memory repositories on a
@@ -89,6 +95,7 @@ function createRepositories(db: AppDatabase | null): Repositories {
       agentRunRepository: new DrizzleAgentRunRepository(db),
       proposedActionRepository: new DrizzleProposedActionRepository(db),
       credentialRepository: new DrizzleCredentialRepository(db),
+      feedbackWidgetKeyRepository: new DrizzleFeedbackWidgetKeyRepository(db),
     };
   }
 
@@ -100,6 +107,7 @@ function createRepositories(db: AppDatabase | null): Repositories {
     agentRunRepository: new InMemoryAgentRunRepository(),
     proposedActionRepository: new InMemoryProposedActionRepository(),
     credentialRepository: new InMemoryCredentialRepository(),
+    feedbackWidgetKeyRepository: new InMemoryFeedbackWidgetKeyRepository(),
   };
 }
 
@@ -158,5 +166,8 @@ export const proposedActionRepository = repositories.proposedActionRepository;
 
 // Phase 2 PR3: per-tenant encrypted integration credentials (GHL, Resend).
 export const credentialRepository = repositories.credentialRepository;
+
+// Phase 3: embeddable feedback widget keys.
+export const feedbackWidgetKeyRepository = repositories.feedbackWidgetKeyRepository;
 
 export const agentEngine = createAgentEngine(credentialRepository);
