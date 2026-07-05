@@ -18,6 +18,7 @@ import { NeedsYouQueue } from "./needs-you-queue";
 import { MetricTiles, type MetricTile } from "./metric-tiles";
 import { DepartmentStrip } from "./department-strip";
 import { ActivityFeed } from "./activity-feed";
+import { IdeasLab } from "./ideas-lab";
 
 const RECENT_RUNS_LIMIT = 8;
 const RECENT_ACTIONS_WINDOW = 100;
@@ -85,6 +86,8 @@ export default async function DashboardPage() {
 
       <div className="mt-8 space-y-8">
         <MetricTiles tiles={tiles} />
+
+        <IdeasLab />
 
         <NeedsYouQueue actions={pendingActions} />
 

@@ -1,8 +1,18 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { agentRuns } from "../../../db/schema";
 import type * as dbSchema from "../../../db/schema";
 import type { AgentRun, CreateAgentRunInput } from "./types";
+
+// All-time run counts per agent for a tenant, for the agent roster's stat
+// cards. Only truly-stored, countable facts (agent_runs has no latency
+// column, so the roster never shows an invented response time).
+export interface AgentRunAggregate {
+  agentName: string;
+  totalRuns: number;
+  completedRuns: number;
+  failedRuns: number;
+}
 
 export interface AgentRunRepository {
   create(input: CreateAgentRunInput): Promise<AgentRun>;
@@ -12,6 +22,8 @@ export interface AgentRunRepository {
   // bounded, newest first. This is the memory-event feed's fallback source
   // until Phase 2.5's memory_events stream lands.
   listRecentForTenant(tenantId: string, limit: number): Promise<AgentRun[]>;
+  // Agent roster stat cards: all-time run counts grouped by agent.
+  aggregateByAgentForTenant(tenantId: string): Promise<AgentRunAggregate[]>;
 }
 
 export class InMemoryAgentRunRepository implements AgentRunRepository {
@@ -50,6 +62,24 @@ export class InMemoryAgentRunRepository implements AgentRunRepository {
       .filter((run) => run.tenantId === tenantId)
       .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
       .slice(0, Math.max(0, limit));
+  }
+
+  async aggregateByAgentForTenant(tenantId: string): Promise<AgentRunAggregate[]> {
+    const byAgent = new Map<string, AgentRunAggregate>();
+    for (const run of this.store.values()) {
+      if (run.tenantId !== tenantId) continue;
+      const agg = byAgent.get(run.agentName) ?? {
+        agentName: run.agentName,
+        totalRuns: 0,
+        completedRuns: 0,
+        failedRuns: 0,
+      };
+      agg.totalRuns += 1;
+      if (run.status === "completed") agg.completedRuns += 1;
+      if (run.status === "failed") agg.failedRuns += 1;
+      byAgent.set(run.agentName, agg);
+    }
+    return Array.from(byAgent.values());
   }
 }
 
@@ -120,5 +150,26 @@ export class DrizzleAgentRunRepository implements AgentRunRepository {
       .orderBy(desc(agentRuns.createdAt))
       .limit(Math.max(0, limit));
     return records.map(toAgentRun);
+  }
+
+  async aggregateByAgentForTenant(tenantId: string): Promise<AgentRunAggregate[]> {
+    const rows = await this.db
+      .select({
+        agentName: agentRuns.agentName,
+        totalRuns: count(),
+        completedRuns: sql<number>`count(*) filter (where ${agentRuns.status} = 'completed')`,
+        failedRuns: sql<number>`count(*) filter (where ${agentRuns.status} = 'failed')`,
+      })
+      .from(agentRuns)
+      .where(eq(agentRuns.tenantId, tenantId))
+      .groupBy(agentRuns.agentName);
+
+    // postgres returns bigint counts as strings; normalize to numbers.
+    return rows.map((row) => ({
+      agentName: row.agentName,
+      totalRuns: Number(row.totalRuns),
+      completedRuns: Number(row.completedRuns),
+      failedRuns: Number(row.failedRuns),
+    }));
   }
 }
