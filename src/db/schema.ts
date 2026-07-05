@@ -222,3 +222,70 @@ export const cognitiveObjectOutcomes = pgTable(
     ),
   ],
 );
+
+// ── Phase 2: Agent runs + governed Proposed Actions ──
+
+export const agentRunStatusEnum = pgEnum("agent_run_status", ["completed", "failed"]);
+
+export const proposedActionStatusEnum = pgEnum("proposed_action_status", [
+  "proposed",
+  "approved",
+  "rejected",
+  "executed",
+  "failed",
+]);
+
+export const agentRuns = pgTable(
+  "agent_runs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: varchar("tenant_id", { length: 191 }).notNull(),
+    // Agent runs (and the proposed actions they produce) are audit trail:
+    // block object deletion while they exist, same convention as approvals
+    // and outcomes above.
+    objectId: uuid("object_id")
+      .notNull()
+      .references(() => cognitiveObjects.id, { onDelete: "restrict" }),
+    agentName: varchar("agent_name", { length: 120 }).notNull(),
+    task: text("task").notNull(),
+    status: agentRunStatusEnum("status").notNull(),
+    responseText: text("response_text"),
+    toolCalls: jsonb("tool_calls").$type<unknown[]>().notNull().default([]),
+    delegationRequest: jsonb("delegation_request").$type<Record<string, unknown> | null>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("agent_runs_tenant_object_idx").on(table.tenantId, table.objectId)],
+);
+
+export const proposedActions = pgTable(
+  "proposed_actions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: varchar("tenant_id", { length: 191 }).notNull(),
+    agentRunId: uuid("agent_run_id")
+      .notNull()
+      .references(() => agentRuns.id, { onDelete: "restrict" }),
+    // Denormalized from the run for direct "pending actions on this object"
+    // queries without a join.
+    objectId: uuid("object_id")
+      .notNull()
+      .references(() => cognitiveObjects.id, { onDelete: "restrict" }),
+    toolName: varchar("tool_name", { length: 120 }).notNull(),
+    args: jsonb("args").$type<Record<string, unknown>>().notNull().default({}),
+    description: text("description").notNull(),
+    effectiveRiskLevel: riskLevelEnum("effective_risk_level").notNull(),
+    reversible: boolean("reversible").notNull(),
+    status: proposedActionStatusEnum("status").notNull().default("proposed"),
+    approvalRequired: boolean("approval_required").notNull(),
+    approvalReason: text("approval_reason"),
+    decidedByUserId: varchar("decided_by_user_id", { length: 191 }),
+    decidedAt: timestamp("decided_at", { withTimezone: true }),
+    resultSummary: text("result_summary"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("proposed_actions_tenant_object_idx").on(table.tenantId, table.objectId),
+    index("proposed_actions_tenant_run_idx").on(table.tenantId, table.agentRunId),
+    index("proposed_actions_tenant_status_idx").on(table.tenantId, table.status),
+  ],
+);

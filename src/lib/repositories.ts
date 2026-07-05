@@ -20,6 +20,19 @@ import {
   InMemoryOutcomeRepository,
   type OutcomeRepository,
 } from "./outcome/repository";
+import { GraphContextRetriever, type ContextRetriever } from "./ai/context-retriever";
+import { reasoningEngine } from "./ai/engine";
+import {
+  DrizzleAgentRunRepository,
+  InMemoryAgentRunRepository,
+  type AgentRunRepository,
+} from "./agents/agent-run/repository";
+import {
+  DrizzleProposedActionRepository,
+  InMemoryProposedActionRepository,
+  type ProposedActionRepository,
+} from "./agents/proposed-action/repository";
+import { agentEngine } from "./agents/engine";
 
 // Central persistence wiring. When DATABASE_URL is set we use the Postgres /
 // Drizzle adapters (shared single client); otherwise everything falls back to
@@ -30,6 +43,24 @@ interface Repositories {
   cognitiveGraphRepository: CognitiveGraphRepository;
   evolutionLoopRunRepository: EvolutionLoopRunRepository;
   outcomeRepository: OutcomeRepository;
+  agentRunRepository: AgentRunRepository;
+  proposedActionRepository: ProposedActionRepository;
+}
+
+// In production, silently falling back to in-memory repositories on a
+// misconfigured DATABASE_URL would look like a working deploy while quietly
+// discarding every write on restart. Fail loud instead (AUDIT.md open item).
+//
+// NEXT_PHASE === "phase-production-build" excludes `next build`'s page-data
+// collection step, which imports every route module (this one included)
+// under NODE_ENV=production before the real runtime env is available. This
+// guard must only fire when the server actually starts serving requests.
+const isNextProductionBuild = process.env.NEXT_PHASE === "phase-production-build";
+
+if (process.env.NODE_ENV === "production" && !isNextProductionBuild && !process.env.DATABASE_URL) {
+  throw new Error(
+    "DATABASE_URL is required in production. Refusing to start on the in-memory fallback.",
+  );
 }
 
 const database: AppDatabase | null = process.env.DATABASE_URL
@@ -43,6 +74,8 @@ function createRepositories(db: AppDatabase | null): Repositories {
       cognitiveGraphRepository: new DrizzleCognitiveGraphRepository(db),
       evolutionLoopRunRepository: new DrizzleEvolutionLoopRunRepository(db),
       outcomeRepository: new DrizzleOutcomeRepository(db),
+      agentRunRepository: new DrizzleAgentRunRepository(db),
+      proposedActionRepository: new DrizzleProposedActionRepository(db),
     };
   }
 
@@ -51,6 +84,8 @@ function createRepositories(db: AppDatabase | null): Repositories {
     cognitiveGraphRepository: new InMemoryCognitiveGraphRepository(),
     evolutionLoopRunRepository: new InMemoryEvolutionLoopRunRepository(),
     outcomeRepository: new InMemoryOutcomeRepository(),
+    agentRunRepository: new InMemoryAgentRunRepository(),
+    proposedActionRepository: new InMemoryProposedActionRepository(),
   };
 }
 
@@ -85,3 +120,19 @@ export const cognitiveObjectRepository = repositories.cognitiveObjectRepository;
 export const cognitiveGraphRepository = repositories.cognitiveGraphRepository;
 export const evolutionLoopRunRepository = repositories.evolutionLoopRunRepository;
 export const outcomeRepository = repositories.outcomeRepository;
+
+// AI reasoning + context retrieval wiring. The reasoning engine itself picks
+// real-vs-fake based on ANTHROPIC_API_KEY presence (see ai/engine.ts); the
+// retriever is always graph-based today (see ai/context-retriever.ts for the
+// planned semantic-retrieval follow-up).
+export const contextRetriever: ContextRetriever = new GraphContextRetriever(
+  cognitiveGraphRepository,
+  cognitiveObjectRepository,
+);
+export { reasoningEngine };
+
+// Phase 2: agent runs + governed Proposed Actions. agentEngine picks
+// real-vs-fake the same way reasoningEngine does (see agents/engine.ts).
+export const agentRunRepository = repositories.agentRunRepository;
+export const proposedActionRepository = repositories.proposedActionRepository;
+export { agentEngine };

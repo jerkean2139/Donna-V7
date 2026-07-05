@@ -7,9 +7,17 @@ import { getTenantContext } from "@/lib/auth/tenant";
 import { createCognitiveObjectFormSchema } from "@/lib/cognitive-object/input";
 import { toFieldErrors, type FormActionState } from "@/lib/forms";
 import { errorField, logger } from "@/lib/logger";
-import { cognitiveObjectRepository, evolutionLoopRunRepository } from "@/lib/repositories";
+import {
+  cognitiveObjectRepository,
+  contextRetriever,
+  evolutionLoopRunRepository,
+  reasoningEngine,
+} from "@/lib/repositories";
 import { createCognitiveObject } from "@/lib/cognitive-object/service";
 import { startEvolutionLoopForObject } from "@/lib/evolution-loop/service";
+import { checkRateLimit } from "@/lib/security/rate-limit";
+
+const EVOLUTION_LOOP_RATE_LIMIT = { windowMs: 60_000, maxRequests: 20 };
 
 export async function createCognitiveObjectAction(
   _previousState: FormActionState,
@@ -89,11 +97,22 @@ export async function startEvolutionLoopAction(formData: FormData): Promise<void
     objectId: formData.get("objectId"),
   });
 
+  // Each loop run is a real AI call once ANTHROPIC_API_KEY is set (cost +
+  // latency), so this is the first route to rate-limit per Phase 1 design's
+  // security section. Per-tenant so one tenant's usage can't exhaust another's.
+  checkRateLimit(`evolution_loop:${tenant.tenantId}`, EVOLUTION_LOOP_RATE_LIMIT);
+
   const startedAt = Date.now();
-  const run = await startEvolutionLoopForObject(cognitiveObjectRepository, evolutionLoopRunRepository, {
-    objectId: input.objectId,
-    tenantId: tenant.tenantId,
-  });
+  const run = await startEvolutionLoopForObject(
+    cognitiveObjectRepository,
+    evolutionLoopRunRepository,
+    reasoningEngine,
+    contextRetriever,
+    {
+      objectId: input.objectId,
+      tenantId: tenant.tenantId,
+    },
+  );
 
   logger.info("evolution_loop.started", {
     tenantId: tenant.tenantId,

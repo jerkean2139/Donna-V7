@@ -4,6 +4,19 @@ import type {
   LoopReleaseScoreItem,
 } from "./types";
 
+// STRUCTURAL GATE, not a quality judge. Everything in this file checks
+// whether a field is present and well-formed (non-empty text, at least two
+// options, etc.) -- it cannot tell a genuinely good recommendation from a
+// hollow one that merely fills in every field. That is deliberate: this
+// score persists on every run (including from the fake engine, with no AI
+// key) as a cheap completeness check.
+//
+// Real decision-quality grading is a separate concern: an LLM judge scoring
+// the SAME 10 categories on substance, not presence. See
+// ReasoningEngine.scoreDecisionQuality (src/lib/ai/types.ts) and the eval
+// harness in tests/ai.golden-set-regression.test.ts (deterministic, keyless)
+// and tests/evals/decision-quality.evalsuite.ts (live, requires a key).
+
 export interface ReleaseScoreInput {
   intentClear: boolean;
   contextRetrieved: boolean;
