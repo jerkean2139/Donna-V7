@@ -9,6 +9,7 @@ import {
 } from "@clerk/nextjs";
 import { MainNav } from "@/components/main-nav";
 import { BottomNav } from "@/components/bottom-nav";
+import { InstallPrompt } from "@/components/install-prompt";
 import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import "./globals.css";
 
@@ -84,6 +85,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <Show when="signed-in">
             <BottomNav />
           </Show>
+          <InstallPrompt />
           <ServiceWorkerRegister />
         </ClerkProvider>
       </body>
