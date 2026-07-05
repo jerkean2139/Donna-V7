@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 // Baseline security headers for every route. A full Content-Security-Policy is
 // deliberately deferred until the production Clerk domain is known (Clerk needs
@@ -23,4 +24,13 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Uploads source maps at build time so Sentry shows real stack traces
+// instead of minified ones. Silently no-ops (no source-map upload, no
+// wrapping errors) when SENTRY_AUTH_TOKEN is unset, so local dev and PR
+// builds without the token still build fine.
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG ?? "kean-on-biz",
+  project: process.env.SENTRY_PROJECT ?? "donna-v7",
+  silent: true,
+  widenClientFileUpload: true,
+});

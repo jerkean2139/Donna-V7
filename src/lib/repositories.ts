@@ -37,7 +37,14 @@ interface Repositories {
 // In production, silently falling back to in-memory repositories on a
 // misconfigured DATABASE_URL would look like a working deploy while quietly
 // discarding every write on restart. Fail loud instead (AUDIT.md open item).
-if (process.env.NODE_ENV === "production" && !process.env.DATABASE_URL) {
+//
+// NEXT_PHASE === "phase-production-build" excludes `next build`'s page-data
+// collection step, which imports every route module (this one included)
+// under NODE_ENV=production before the real runtime env is available. This
+// guard must only fire when the server actually starts serving requests.
+const isNextProductionBuild = process.env.NEXT_PHASE === "phase-production-build";
+
+if (process.env.NODE_ENV === "production" && !isNextProductionBuild && !process.env.DATABASE_URL) {
   throw new Error(
     "DATABASE_URL is required in production. Refusing to start on the in-memory fallback.",
   );
