@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { buildBriefing, type Briefing, type BriefingObject } from "@/lib/dashboard/briefing";
+import { VoiceVisualizer, type VoiceVisualizerHandle } from "@/components/voice-visualizer";
 
 interface WelcomeBriefingProps {
   tenantId: string;
@@ -16,9 +17,6 @@ interface BriefingInit {
   voiceSupported: boolean;
 }
 
-// Bar count for the equalizer; each gets a staggered animation delay.
-const BAR_COUNT = 7;
-
 export function WelcomeBriefing({
   tenantId,
   userName,
@@ -30,6 +28,7 @@ export function WelcomeBriefing({
   const [dismissed, setDismissed] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const didInit = useRef(false);
+  const visualizerRef = useRef<VoiceVisualizerHandle | null>(null);
 
   // One-time, post-hydration initialization. Reads the last-visit timestamp
   // from localStorage (browser-only, so it can't run during SSR/render),
@@ -74,6 +73,9 @@ export function WelcomeBriefing({
       .find((voice) => /en(-|_)?(US|GB)/i.test(voice.lang) && /natural|google|samantha|aria/i.test(voice.name));
     if (preferred) utterance.voice = preferred;
 
+    // Each spoken word boundary punches the visualizer, so it reacts to the
+    // rhythm of Donna's actual speech (TTS audio itself can't be FFT-tapped).
+    utterance.onboundary = () => visualizerRef.current?.surge();
     utterance.onend = () => setSpeaking(false);
     utterance.onerror = () => setSpeaking(false);
     setSpeaking(true);
@@ -96,7 +98,7 @@ export function WelcomeBriefing({
       <button
         type="button"
         onClick={() => setDismissed(false)}
-        className="mt-2 inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
+        className="mt-2 inline-flex items-center gap-2 rounded-lg border border-hairline px-3 py-1.5 text-sm text-muted transition-colors hover:text-ink"
       >
         <span aria-hidden="true">🎙️</span> Replay briefing
       </button>
@@ -105,7 +107,7 @@ export function WelcomeBriefing({
 
   if (!init) {
     // Reserve height so the dashboard doesn't jump when the briefing mounts.
-    return <div className="mt-2 h-[220px] animate-pulse rounded-2xl bg-slate-100" aria-hidden="true" />;
+    return <div className="mt-2 h-[240px] animate-pulse rounded-2xl bg-white/5" aria-hidden="true" />;
   }
 
   const { briefing, voiceSupported } = init;
@@ -131,37 +133,31 @@ export function WelcomeBriefing({
       </button>
 
       <div className="relative flex flex-col items-center gap-5 text-center">
+        <div className="donna-onair" aria-hidden="true">
+          <span className="donna-onair-dot" /> {speaking ? "ON AIR" : voiceSupported ? "TAP TO PLAY" : "BRIEFING"}
+        </div>
+
+        {/* The star: a dense, glowing waveform that bounces to Donna's voice. */}
         <button
           type="button"
           onClick={toggle}
           aria-pressed={speaking}
           aria-label={speaking ? "Stop the spoken briefing" : "Play the spoken briefing"}
-          className="donna-mic group relative flex h-24 w-24 items-center justify-center rounded-full"
           disabled={!voiceSupported}
+          className="group relative flex w-full max-w-xl items-center justify-center"
         >
-          <span className="donna-ring" aria-hidden="true" />
-          <span className="donna-ring donna-ring-2" aria-hidden="true" />
-
-          {speaking ? (
-            <span className="donna-eq" aria-hidden="true">
-              {Array.from({ length: BAR_COUNT }).map((_, index) => (
-                <span key={index} style={{ animationDelay: `${index * 90}ms` }} />
-              ))}
+          <VoiceVisualizer active={speaking} ref={visualizerRef} className="h-24 w-full sm:h-28" />
+          {!speaking && (
+            <span className="donna-mic absolute flex h-16 w-16 items-center justify-center rounded-full transition-transform group-hover:scale-105">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="text-cyan-100">
+                <path d="M8 5v14l11-7z" fill="currentColor" stroke="none" />
+              </svg>
             </span>
-          ) : (
-            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="text-cyan-100">
-              <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z" />
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3" strokeLinecap="round" />
-            </svg>
           )}
         </button>
 
-        <div className="donna-onair" aria-hidden="true">
-          <span className="donna-onair-dot" /> {speaking ? "ON AIR" : voiceSupported ? "TAP TO PLAY" : "BRIEFING"}
-        </div>
-
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">{briefing.headline}</h2>
+          <h2 className="donna-display text-2xl font-bold tracking-tight sm:text-4xl">{briefing.headline}</h2>
           <p className="mt-1 text-sm text-cyan-200/80">Your intelligence operating system</p>
         </div>
 

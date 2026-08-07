@@ -31,17 +31,17 @@ export default async function NewRelationshipPage({ params }: NewRelationshipPag
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
-      <Link className="text-sm text-slate-600 underline" href={`/cognitive-objects/${object.id}`}>
+      <Link className="text-sm text-muted underline" href={`/cognitive-objects/${object.id}`}>
         ← Back to {object.title}
       </Link>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-950">Add relationship</h1>
-      <p className="mt-3 text-slate-700">
+      <h1 className="mt-4 text-3xl font-bold tracking-tight text-ink">Add relationship</h1>
+      <p className="mt-3 text-muted">
         Connect <span className="font-semibold">{object.title}</span> to another Cognitive Object in
         your workspace so the graph can reason across them.
       </p>
 
       {candidates.length === 0 ? (
-        <div className="mt-8 rounded-xl border border-dashed border-slate-300 p-8 text-slate-700">
+        <div className="mt-8 donna-card rounded-2xl border-dashed p-8 text-muted">
           There are no other Cognitive Objects in this workspace yet.{" "}
           <Link className="font-medium underline" href="/cognitive-objects/new">
             Create another object

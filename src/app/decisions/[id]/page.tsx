@@ -18,8 +18,8 @@ interface DecisionDetailPageProps {
 function Field({ label, value }: { label: string; value: string | null }) {
   return (
     <div>
-      <dt className="text-sm font-semibold text-slate-500">{label}</dt>
-      <dd className="mt-1 text-slate-900">{value?.trim() ? value : "—"}</dd>
+      <dt className="text-sm font-semibold text-faint">{label}</dt>
+      <dd className="mt-1 text-ink">{value?.trim() ? value : "—"}</dd>
     </div>
   );
 }
@@ -46,12 +46,12 @@ export default async function DecisionDetailPage({ params }: DecisionDetailPageP
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-10">
-      <Link className="text-sm text-slate-500 hover:text-slate-900" href="/decisions">
+      <Link className="text-sm text-muted transition-colors hover:text-ink" href="/decisions">
         ← All decisions
       </Link>
 
       <div className="mt-4 flex items-start justify-between gap-4">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-950">{decision.title}</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-ink">{decision.title}</h1>
         <div className="flex shrink-0 flex-wrap justify-end gap-2">
           <StatusBadge status={decision.status} />
           <RiskBadge level={decision.riskLevel} />
@@ -59,7 +59,7 @@ export default async function DecisionDetailPage({ params }: DecisionDetailPageP
       </div>
 
       {decision.approvalRequired && (
-        <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+        <div className="mt-4 rounded-lg border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-amber-200">
           <span className="font-semibold">Human approval required.</span>{" "}
           {decision.approvalReason ?? "This decision meets the tenant's approval threshold."}
         </div>
@@ -83,18 +83,18 @@ export default async function DecisionDetailPage({ params }: DecisionDetailPageP
       </dl>
 
       <section className="mt-8">
-        <h2 className="font-semibold text-slate-950">
+        <h2 className="font-semibold text-ink">
           Assumptions{" "}
-          <span className="text-sm font-normal text-slate-500">({decision.assumptions.length})</span>
+          <span className="text-sm font-normal text-faint">({decision.assumptions.length})</span>
         </h2>
         {decision.assumptions.length === 0 ? (
-          <p className="mt-2 text-sm text-slate-500">No assumptions recorded yet.</p>
+          <p className="mt-2 text-sm text-faint">No assumptions recorded yet.</p>
         ) : (
           <ul className="mt-3 space-y-2">
             {decision.assumptions.map((assumption, index) => (
-              <li key={index} className="rounded-lg border border-slate-200 p-3 text-sm">
-                <span className="text-slate-900">{assumption.text}</span>
-                <span className="ml-2 text-xs capitalize text-slate-500">
+              <li key={index} className="rounded-lg border border-hairline p-3 text-sm">
+                <span className="text-ink">{assumption.text}</span>
+                <span className="ml-2 text-xs capitalize text-faint">
                   {assumption.riskLevel} risk
                   {assumption.needsVerification ? " · needs verification" : ""}
                 </span>
@@ -105,20 +105,20 @@ export default async function DecisionDetailPage({ params }: DecisionDetailPageP
       </section>
 
       <section className="mt-8">
-        <h2 className="font-semibold text-slate-950">
+        <h2 className="font-semibold text-ink">
           Options considered{" "}
-          <span className="text-sm font-normal text-slate-500">
+          <span className="text-sm font-normal text-faint">
             ({decision.optionsConsidered.length})
           </span>
         </h2>
         {decision.optionsConsidered.length === 0 ? (
-          <p className="mt-2 text-sm text-slate-500">No options recorded yet.</p>
+          <p className="mt-2 text-sm text-faint">No options recorded yet.</p>
         ) : (
           <ul className="mt-3 space-y-2">
             {decision.optionsConsidered.map((option, index) => (
-              <li key={index} className="rounded-lg border border-slate-200 p-3 text-sm">
-                <span className="font-medium text-slate-900">{option.name}</span>
-                <p className="mt-1 text-slate-600">{option.summary}</p>
+              <li key={index} className="rounded-lg border border-hairline p-3 text-sm">
+                <span className="font-medium text-ink">{option.name}</span>
+                <p className="mt-1 text-muted">{option.summary}</p>
               </li>
             ))}
           </ul>
@@ -126,26 +126,26 @@ export default async function DecisionDetailPage({ params }: DecisionDetailPageP
       </section>
 
       <section className="mt-8">
-        <h2 className="font-semibold text-slate-950">
+        <h2 className="font-semibold text-ink">
           Outcomes &amp; lessons{" "}
-          <span className="text-sm font-normal text-slate-500">({decision.outcomes.length})</span>
+          <span className="text-sm font-normal text-faint">({decision.outcomes.length})</span>
         </h2>
         {decision.outcomes.length === 0 ? (
-          <p className="mt-2 text-sm text-slate-500">No outcomes recorded yet.</p>
+          <p className="mt-2 text-sm text-faint">No outcomes recorded yet.</p>
         ) : (
           <ul className="mt-3 space-y-2">
             {decision.outcomes.map((outcome) => (
-              <li key={outcome.id} className="rounded-lg border border-slate-200 p-3 text-sm">
+              <li key={outcome.id} className="rounded-lg border border-hairline p-3 text-sm">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-slate-900">{outcome.outcomeSummary}</span>
+                  <span className="text-ink">{outcome.outcomeSummary}</span>
                   {outcome.successScore != null && (
-                    <span className="shrink-0 text-xs text-slate-500">
+                    <span className="shrink-0 text-xs text-faint">
                       success {outcome.successScore}/100
                     </span>
                   )}
                 </div>
                 {outcome.lessonLearned && (
-                  <p className="mt-1 text-slate-600">Lesson: {outcome.lessonLearned}</p>
+                  <p className="mt-1 text-muted">Lesson: {outcome.lessonLearned}</p>
                 )}
                 {outcome.followUpRequired && (
                   <p className="mt-1 text-xs font-medium text-amber-700">Follow-up required</p>

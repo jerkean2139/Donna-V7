@@ -7,7 +7,7 @@ import { createCognitiveObjectAction } from "../actions";
 
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
-  return <p className="mt-1 text-sm text-red-600" role="alert">{message}</p>;
+  return <p className="mt-1 text-sm text-rose-300" role="alert">{message}</p>;
 }
 
 export function CreateObjectForm() {
@@ -17,14 +17,14 @@ export function CreateObjectForm() {
   return (
     <form action={formAction} className="mt-8 space-y-6" aria-busy={isPending}>
       {state.status === "error" && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700" role="alert" aria-live="polite">
+        <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-200" role="alert" aria-live="polite">
           {state.message}
         </div>
       )}
 
       <label className="block">
         <span className="text-sm font-medium">Type</span>
-        <select name="objectType" className="mt-2 w-full rounded-lg border border-slate-300 p-3">
+        <select name="objectType" className="mt-2 w-full rounded-lg border border-hairline bg-surface p-3 text-ink placeholder:text-faint">
           {cognitiveObjectTypes.map((type) => (
             <option key={type} value={type}>{type}</option>
           ))}
@@ -39,7 +39,7 @@ export function CreateObjectForm() {
           required
           minLength={3}
           maxLength={180}
-          className="mt-2 w-full rounded-lg border border-slate-300 p-3"
+          className="mt-2 w-full rounded-lg border border-hairline bg-surface p-3 text-ink placeholder:text-faint"
           aria-invalid={Boolean(fieldErrors.title)}
         />
         <FieldError message={fieldErrors.title} />
@@ -47,12 +47,12 @@ export function CreateObjectForm() {
 
       <label className="block">
         <span className="text-sm font-medium">Objective</span>
-        <span className="ml-2 text-xs text-slate-500">What are you trying to accomplish? (decisions)</span>
+        <span className="ml-2 text-xs text-faint">What are you trying to accomplish? (decisions)</span>
         <textarea
           name="objective"
           rows={2}
           maxLength={2000}
-          className="mt-2 w-full rounded-lg border border-slate-300 p-3"
+          className="mt-2 w-full rounded-lg border border-hairline bg-surface p-3 text-ink placeholder:text-faint"
           aria-invalid={Boolean(fieldErrors.objective)}
         />
         <FieldError message={fieldErrors.objective} />
@@ -64,7 +64,7 @@ export function CreateObjectForm() {
           name="summary"
           rows={3}
           maxLength={1000}
-          className="mt-2 w-full rounded-lg border border-slate-300 p-3"
+          className="mt-2 w-full rounded-lg border border-hairline bg-surface p-3 text-ink placeholder:text-faint"
           aria-invalid={Boolean(fieldErrors.summary)}
         />
         <FieldError message={fieldErrors.summary} />
@@ -76,7 +76,7 @@ export function CreateObjectForm() {
           name="body"
           rows={8}
           maxLength={20000}
-          className="mt-2 w-full rounded-lg border border-slate-300 p-3"
+          className="mt-2 w-full rounded-lg border border-hairline bg-surface p-3 text-ink placeholder:text-faint"
           aria-invalid={Boolean(fieldErrors.body)}
         />
         <FieldError message={fieldErrors.body} />
@@ -84,7 +84,7 @@ export function CreateObjectForm() {
 
       <label className="block">
         <span className="text-sm font-medium">Risk level</span>
-        <select name="riskLevel" className="mt-2 w-full rounded-lg border border-slate-300 p-3">
+        <select name="riskLevel" className="mt-2 w-full rounded-lg border border-hairline bg-surface p-3 text-ink placeholder:text-faint">
           {riskLevels.map((risk) => (
             <option key={risk} value={risk}>{risk}</option>
           ))}
@@ -99,7 +99,7 @@ export function CreateObjectForm() {
         <input
           name="tags"
           maxLength={2000}
-          className="mt-2 w-full rounded-lg border border-slate-300 p-3"
+          className="mt-2 w-full rounded-lg border border-hairline bg-surface p-3 text-ink placeholder:text-faint"
           aria-invalid={Boolean(fieldErrors.tags)}
         />
         <FieldError message={fieldErrors.tags} />
@@ -108,7 +108,7 @@ export function CreateObjectForm() {
       <button
         type="submit"
         disabled={isPending}
-        className="rounded-lg bg-slate-950 px-5 py-3 text-white disabled:cursor-not-allowed disabled:opacity-60"
+        className="rounded-xl bg-gradient-to-br from-cyan-400 to-indigo-500 px-5 py-3 font-semibold text-[#06080f] shadow-[0_10px_30px_-10px_rgba(34,211,238,0.5)] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isPending ? "Creating…" : "Create object"}
       </button>
