@@ -7,7 +7,10 @@ import {
   cognitiveObjectRepository,
   cognitiveGraphRepository,
   evolutionLoopRunRepository,
+  agentRunRepository,
+  proposedActionRepository,
 } from "@/lib/repositories";
+import { AgentMobSection } from "./agent-mob";
 import { getTenantCognitiveObject } from "@/lib/cognitive-object/service";
 import { evaluateCognitiveObjectGovernance, defaultTenantGovernancePolicy } from "@/lib/cognitive-object/governance";
 import { listCognitiveGraphEdgesForObject } from "@/lib/cognitive-graph/service";
@@ -45,6 +48,11 @@ export default async function CognitiveObjectDetailPage({ params }: CognitiveObj
     tenantId: tenant.tenantId,
   });
   const latestRun = loopRuns[0] ?? null;
+
+  const [agentRuns, proposedActions] = await Promise.all([
+    agentRunRepository.listByObjectForTenant(object.id, tenant.tenantId),
+    proposedActionRepository.listByObjectForTenant(object.id, tenant.tenantId),
+  ]);
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-10">
@@ -161,6 +169,12 @@ export default async function CognitiveObjectDetailPage({ params }: CognitiveObj
           </div>
         )}
       </section>
+
+      <AgentMobSection
+        objectId={object.id}
+        agentRuns={agentRuns}
+        proposedActions={proposedActions}
+      />
 
       <section className="mt-8 donna-card rounded-2xl p-5">
         <h2 className="font-semibold">Body</h2>
