@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { tryGetTenantContext } from "@/lib/auth/tenant";
 import { SelectOrganizationNotice } from "@/components/select-organization-notice";
 import { conversationRepository } from "@/lib/console/repository";
@@ -30,6 +31,17 @@ function AgentPill({ name }: { name: string }) {
   );
 }
 
+function AgentAvatar({ name }: { name: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/5 text-xs font-bold text-cyan-200 ring-1 ring-inset ring-cyan-400/30"
+    >
+      {name.slice(0, 1)}
+    </span>
+  );
+}
+
 function MessageRow({ message }: { message: ConsoleMessage }) {
   if (message.role === "user") {
     return (
@@ -41,7 +53,41 @@ function MessageRow({ message }: { message: ConsoleMessage }) {
     );
   }
 
-  // Donna (and, later, agent) messages.
+  // An agent speaking after Donna handed the work to them.
+  if (message.role === "agent") {
+    return (
+      <div className="flex items-start gap-3">
+        <AgentAvatar name={message.agentName ?? "?"} />
+        <div className="max-w-[85%]">
+          {message.agentName && (
+            <div className="mb-1 flex items-center gap-2">
+              <AgentPill name={message.agentName} />
+            </div>
+          )}
+          <div className="rounded-2xl rounded-tl-sm border border-cyan-400/20 bg-cyan-400/[0.06] px-4 py-2.5 text-sm leading-6 text-ink whitespace-pre-wrap">
+            {message.content}
+          </div>
+          {message.objectId && (
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+              <Link
+                href={`/cognitive-objects/${message.objectId}`}
+                className="inline-flex items-center gap-1 rounded-lg border border-hairline px-2.5 py-1 text-muted transition-colors hover:border-accent/40 hover:text-ink"
+              >
+                Open work hub →
+              </Link>
+              {message.proposedActionCount > 0 && (
+                <span className="rounded-full bg-amber-400/12 px-2.5 py-1 font-medium text-amber-300 ring-1 ring-inset ring-amber-400/30">
+                  {message.proposedActionCount} action{message.proposedActionCount === 1 ? "" : "s"} awaiting approval
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Donna's own messages.
   return (
     <div className="flex items-start gap-3">
       <DonnaAvatar />
