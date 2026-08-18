@@ -70,7 +70,7 @@ function MessageRow({ message }: { message: ConsoleMessage }) {
           {message.objectId && (
             <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
               <Link
-                href={`/cognitive-objects/${message.objectId}`}
+                href={`/console/hub/${message.objectId}`}
                 className="inline-flex items-center gap-1 rounded-lg border border-hairline px-2.5 py-1 text-muted transition-colors hover:border-accent/40 hover:text-ink"
               >
                 Open work hub →
