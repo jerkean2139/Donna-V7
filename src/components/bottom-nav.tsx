@@ -13,6 +13,16 @@ interface Tab {
 
 const tabs: Tab[] = [
   {
+    href: "/console",
+    label: "Donna",
+    match: (p) => p === "/console" || p.startsWith("/console/"),
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+        <path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.7 8.7 0 0 1-3.9-.9L3 21l1.4-4.6A8.7 8.7 0 0 1 3.5 11 8.38 8.38 0 0 1 12 2.5a8.38 8.38 0 0 1 9 9Z" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
     href: "/dashboard",
     label: "Home",
     match: (p) => p === "/dashboard",
