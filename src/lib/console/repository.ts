@@ -56,6 +56,8 @@ export class InMemoryConversationRepository implements ConversationRepository {
       role: input.role,
       content: input.content,
       agentName: input.agentName ?? null,
+      objectId: input.objectId ?? null,
+      proposedActionCount: input.proposedActionCount ?? 0,
       createdAt: new Date(),
     };
 

@@ -12,6 +12,11 @@ export interface ConsoleMessage {
   // Set when Donna routes a turn to an agent (role="donna") or when an agent
   // speaks in the thread (role="agent"). Null for plain user/Donna text.
   agentName: string | null;
+  // The Cognitive Object the agent worked against (its "work hub"), so the UI
+  // can link the user through to review and approve. Null for plain text.
+  objectId: string | null;
+  // How many side-effecting actions the agent proposed for approval.
+  proposedActionCount: number;
   createdAt: Date;
 }
 
@@ -29,4 +34,6 @@ export interface CreateConsoleMessageInput {
   role: ConsoleRole;
   content: string;
   agentName?: string | null;
+  objectId?: string | null;
+  proposedActionCount?: number;
 }
